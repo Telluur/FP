@@ -67,8 +67,6 @@ increaseAge n (a,b,c,d) = (a,b+n,c,d)
 increaseAgeHO :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
 increaseAgeHO n db = map (increaseAge n) db
 
-
-
 --d
 womenBetween30And40 :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> Bool
 womenBetween30And40 (_,b,c,_) = (b > 30) && (b < 40) && (c == "female")
@@ -172,7 +170,6 @@ weaklyDecreasing list@(x:xs)
 weaklyIncreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
 weaklyIncreasing list = weaklyDecreasing $ reverse list
 
-
 --6
 --a
 list61 = [1,9,2,8,3,7,4,6,5]	--List
@@ -186,6 +183,7 @@ isSublist [] _ = False
 isSublist _ [] = False
 isSublist  sub@(x:xs) list@(y:ys) = prec sub list|| isSublist sub ys
 
+prec :: (Eq a, Num a) => [a] -> [a] -> Bool
 prec [] [] = True
 prec [] (x:xs)  = True
 prec sub@(x:xs) list@(y:ys) 
@@ -200,4 +198,58 @@ isPartialSublist _ [] = False
 isPartialSublist sub@(x:xs) list@(y:ys)
 	| x == y = isPartialSublist xs ys
 	| otherwise = isPartialSublist sub ys
+	
+--7
+--a
+bubble :: (Ord a) => [a] -> [a]
+bubble (x:y:xs)
+    | x > y = y : bubble (x:xs)
+    | otherwise = x : bubble (y:xs)
+bubble (x) = (x)
 
+--helper function for applying bubble (length n) times.
+bubblehelp :: (Ord a) => [a] -> Int -> [a]
+bubblehelp xs i 
+    | i == (length xs) = xs
+    | otherwise = bubblehelp (bubble xs) (i + 1) 
+ 
+bubblesort :: (Ord a) => [a] -> [a]
+bubblesort xs = bubblehelp xs 0
+
+--b
+mmsort :: (Ord a) => [a] -> [a]
+mmsort [] = []
+mmsort [x] = [x]
+mmsort list = minimum list : mmsort (list \\ [(minimum list),(maximum list)]) ++ [maximum list]
+
+--c
+ins :: (Ord a) => a -> [a] -> [a]
+ins x (y:ys)
+    | x > y     = y : insert x ys
+    | otherwise = x : y : ys
+
+isort :: (Ord a) => [a] -> [a]
+isort = foldr insert []
+
+--d
+merge :: (Ord a) => [a] -> [a] -> [a]
+merge xs [] = xs
+merge [] ys = ys
+merge (x:xs) (y:ys)
+	| x < y = x : merge xs (y:ys)
+	| otherwise = y : merge (x:xs) ys
+
+msort :: (Ord a) => [a] -> [a]
+msort list
+	| length list > 1 = merge (msort half1) (msort half2)
+	| otherwise = list
+	where
+	n = length list `div` 2
+	half1 = take n list
+	half2 = drop n list
+	
+
+--e
+qsort :: (Ord a) => [a] -> [a]
+qsort [] = []
+qsort (x:xs) = qsort [y | y <- xs, y <= x] ++ [x] ++ qsort [y | y <- xs, y > x]
