@@ -60,12 +60,8 @@ increaseAgeC :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],
 increaseAgeC n db = [ (a,b+n,c,d) | (a,b,c,d) <- db]
 
 --higher order function
---kan dit ook zonder de functie increaseAge?
-increaseAge :: (Num a) => a -> ([Char],a,[Char],[Char]) -> ([Char],a,[Char],[Char])
-increaseAge n (a,b,c,d) = (a,b+n,c,d)
-
 increaseAgeHO :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
-increaseAgeHO n db = map (increaseAge n) db
+increaseAgeHO n db = map (\(a,b,c,d) -> (a,b+n,c,d)) db
 
 --d
 womenBetween30And40 :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> Bool
@@ -95,7 +91,7 @@ ageByName name ((a,b,c,d):xs)
 --f (Not the best implementation :D) 
 sortByAge :: (Num a, Ord a) => [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
 sortByAge db = map swap1stAnd2nd $ sort $ map swap1stAnd2nd db
-		
+
 swap1stAnd2nd :: (a,b,c,d) -> (b,a,c,d)
 swap1stAnd2nd (a,b,c,d) = (b,a,c,d)
 
@@ -110,6 +106,7 @@ primes = sieve [2..]
 isPrime :: Integer -> Bool
 isPrime n = null [ x | x <- [2..n - 1], n `mod`x  == 0]
 
+firstNPrimes :: Int -> [Integer]
 firstNPrimes n = take n primes
 
 primesUnder :: Integer -> [Integer]
@@ -247,7 +244,6 @@ msort list
 	n = length list `div` 2
 	half1 = take n list
 	half2 = drop n list
-	
 
 --e
 qsort :: (Ord a) => [a] -> [a]
