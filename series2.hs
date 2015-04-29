@@ -60,11 +60,14 @@ increaseAgeC :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],
 increaseAgeC n db = [ (a,b+n,c,d) | (a,b,c,d) <- db]
 
 --higher order function
+--kan dit ook zonder de functie increaseAge?
 increaseAge :: (Num a) => a -> ([Char],a,[Char],[Char]) -> ([Char],a,[Char],[Char])
 increaseAge n (a,b,c,d) = (a,b+n,c,d)
 
 increaseAgeHO :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
 increaseAgeHO n db = map (increaseAge n) db
+
+
 
 --d
 womenBetween30And40 :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> Bool
@@ -93,11 +96,10 @@ ageByName name ((a,b,c,d):xs)
 
 --f (Not the best implementation :D) 
 sortByAge :: (Num a, Ord a) => [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
-sortByAge db = swap1stAnd2nd $ sort $ swap1stAnd2nd db
+sortByAge db = map swap1stAnd2nd $ sort $ map swap1stAnd2nd db
 		
-swap1stAnd2nd :: [(a,b,c,d)] -> [(b,a,c,d)]
-swap1stAnd2nd [] = []
-swap1stAnd2nd ((a,b,c,d):xs) = (b,a,c,d) : swap1stAnd2nd xs
+swap1stAnd2nd :: (a,b,c,d) -> (b,a,c,d)
+swap1stAnd2nd (a,b,c,d) = (b,a,c,d)
 
 --3
 --a
@@ -115,14 +117,87 @@ firstNPrimes n = take n primes
 primesUnder :: Integer -> [Integer]
 primesUnder n = sieve [2..n-1]
 
+--b
 dividersC :: Integer -> [Integer]
 dividersC n = [ x | x <- [1..n `div` 2], (n `rem` x) == 0]
 
 dividersHO :: Integer -> [Integer]
 dividersHO n = 1 : filter ((==0) . rem n) [2 .. n `div` 2]
 
---isPrimeAlt :: Integer -> Bool
+isPrimeAlt :: Integer -> Bool
 isPrimeAlt n = 1 == (length $ dividersHO n)
 
+--4
+--a
+pythDup :: Int -> [(Int,Int,Int)]
+pythDup n = [ (a,b,c) | a <- [1..n] , b <- [1..n], c <- [1..n], a^2 + b^2 == c^2 ]
 
+{-
+List comprehensions in the form of [ (x,y) | x <- [1,2], y <- [1..]] yields [(1,1),(1,2),(1,3),..]
+If we were to make the pyth function infinite, b and c would never inflate, thus never finding any solutions.
+-}
+
+--b
+{-
+When generating Pythagorean Triples, the only symmetries that can arise are in the form of (a,b,c) -> (b,a,c)
+If we make sure that b is always equal or greater than a, no duplicates can exists. 
+Optimization: C must always be larger than a and b. So we only generate from b to n.
+Possible optimization: Remove generator for c and check if a^2 + b^2 is a natural number.
+-}
+pyth :: Int -> [(Int,Int,Int)]
+pyth n = [ (a,b,c) | a <- [1..n] , b <- [a..n], c <- [b..n], a^2 + b^2 == c^2]
+
+--5
+--a
+list5a1 = [1,3,5,7,9,11,13,15]
+list5a2 = [1,3,5,3,2,3]
+
+increasing :: (Num a, Ord a) => [a] -> Bool
+increasing [x] = True
+increasing (x:y:xs)
+	| x < y = increasing (y:xs)
+	| otherwise = False
+	
+--b
+list5b1 = [1,2,2,3,3,4,4,5,5]
+list5b2 = [1,2,3,4,3,7,8,9]
+
+--Weird typecast in de eerste guard kan nooit de bedoeling zijn...
+weaklyDecreasing :: (Ord a, Num a, Integral a) => [a] -> Bool 
+weaklyDecreasing [x] = True
+weaklyDecreasing list@(x:xs)
+	| fromIntegral x > ((fromIntegral $ sum xs) / (fromIntegral $ length xs)) = weaklyDecreasing xs
+	| otherwise = False
+	
+weaklyIncreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
+weaklyIncreasing list = weaklyDecreasing $ reverse list
+
+
+--6
+--a
+list61 = [1,9,2,8,3,7,4,6,5]	--List
+list62 = [1,9,2]				--Sublist
+list63 = [7,4,6]				--Sublist
+list64 = [1,4,5]				--Partial
+list65 = [5,4,3]				--Neither
+
+isSublist :: (Eq a, Num a) => [a] -> [a] -> Bool
+isSublist [] _ = False
+isSublist _ [] = False
+isSublist  sub@(x:xs) list@(y:ys) = prec sub list|| isSublist sub ys
+
+prec [] [] = True
+prec [] (x:xs)  = True
+prec sub@(x:xs) list@(y:ys) 
+	| x == y = prec xs ys
+	| otherwise = False
+
+--b
+isPartialSublist :: (Eq a, Num a) => [a] -> [a] -> Bool
+isPartialSublist [] [] = True
+isPartialSublist [] _ = True
+isPartialSublist _ [] = False
+isPartialSublist sub@(x:xs) list@(y:ys)
+	| x == y = isPartialSublist xs ys
+	| otherwise = isPartialSublist sub ys
 
