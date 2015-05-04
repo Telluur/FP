@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 import Data.Char
 import Data.List
 
@@ -88,12 +91,26 @@ ageByName name ((a,b,c,d):xs)
 	| (map toLower name) == (map toLower a) = b
 	| otherwise = ageByName name xs
 
---f (Not the best implementation :D) 
-sortByAge :: (Num a, Ord a) => [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
-sortByAge db = map swap1stAnd2nd $ sort $ map swap1stAnd2nd db
+--f 
+persondb = [
+	(Person "Rick" 30 "male" "Enschede"),
+	(Person "Albert" 21 "male" "Amsterdam"),
+	(Person "Bert" 25 "male" "Rotterdam")
+	]
+	
+data Person = Person {
+	nameT :: [Char],
+	ageT :: Int,
+	sexT :: [Char],
+	placeT :: [Char]
+	}deriving(Eq, Show) 
 
-swap1stAnd2nd :: (a,b,c,d) -> (b,a,c,d)
-swap1stAnd2nd (a,b,c,d) = (b,a,c,d)
+instance Ord Person where
+	compare x y = compare (ageT x) (ageT y)
+
+
+sortByAge :: (Ord Person) => [Person] -> [Person]
+sortByAge db = sort db
 
 --3
 --a
@@ -182,6 +199,7 @@ isSublist  sub@(x:xs) list@(y:ys) = prec sub list|| isSublist sub ys
 
 prec :: (Eq a, Num a) => [a] -> [a] -> Bool
 prec [] [] = True
+prec _ [] = False
 prec [] (x:xs)  = True
 prec sub@(x:xs) list@(y:ys) 
 	| x == y = prec xs ys
@@ -189,7 +207,6 @@ prec sub@(x:xs) list@(y:ys)
 
 --b
 isPartialSublist :: (Eq a, Num a) => [a] -> [a] -> Bool
-isPartialSublist [] [] = True
 isPartialSublist [] _ = True
 isPartialSublist _ [] = False
 isPartialSublist sub@(x:xs) list@(y:ys)
