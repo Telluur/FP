@@ -81,8 +81,6 @@ getWord :: String -> (String, String)
 getWord string = (takeWhile isAlpha string, dropWhile isAlpha string)
 	
 --Parse
-data S = E | O	
-
 parse :: String -> BinTree Token (Either Token Float)
 parse string = fst $ parse' $ tokenize string
 
@@ -98,21 +96,17 @@ parse' ((VAR x):xs) = (Leaf $ Left (VAR x), xs)
 parse' ((OP x):xs) = (Node (Leaf $ Left LB) (OP x) (Leaf $ Left LB), xs)
 parse' (x:xs) = error "Invalid expression: Invalid token in sequence."
 
-
 parse'matchRB :: [Token] -> [Token]
 parse'matchRB ((RB):xs) = xs
 parse'matchRB _ = error "Invalid expression: No matching closing bracket found."
 
-
 --display
 parseAndShowExpr :: String -> IO ()
 parseAndShowExpr e = showBinTree $ parse e
-pase e = parseAndShowExpr e
+ps e = parseAndShowExpr e 
 
 parseAndShowExprList :: [String] -> IO ()
 parseAndShowExprList el = showBinTreeList $ map (parse) el
-pasel el = parseAndShowExprList el
+psl el = parseAndShowExprList el
 
 e0 = "((1.5/3) = (1+~2))"
-
-	
