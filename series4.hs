@@ -78,7 +78,10 @@ getNegNumberPart string@(x:xs)
 	| otherwise = error "Negative number unparsable: Must start with a leading zero."
 
 getWord :: String -> (String, String)
-getWord string = (takeWhile isAlpha string, dropWhile isAlpha string)
+getWord string = (takeWhile isWordPart string, dropWhile isWordPart string)
+
+isWordPart :: Char -> Bool
+isWordPart x = isAlpha x || isDigit x
 	
 --Parse
 parse :: String -> BinTree Token (Either Token Float)
@@ -97,6 +100,7 @@ parse' ((OP x):xs) = (Node (Leaf $ Left LB) (OP x) (Leaf $ Left LB), xs)
 parse' (x:xs) = error "Invalid expression: Invalid token in sequence."
 
 parse'matchRB :: [Token] -> [Token]
+parse'matchRB [] = error "Invalid expression: No matching closing bracket found."
 parse'matchRB ((RB):xs) = xs
 parse'matchRB _ = error "Invalid expression: No matching closing bracket found."
 
@@ -109,4 +113,36 @@ parseAndShowExprList :: [String] -> IO ()
 parseAndShowExprList el = showBinTreeList $ map (parse) el
 psl el = parseAndShowExprList el
 
-e0 = "((1.5/3) = (1+~2))"
+e0 = "((2*(x^2)) + ((1/2)*x))"
+
+eval :: (String -> Float) -> BinTree Token (Either Token Float) -> Either Bool Float
+eval f tree@(Node ll (OP x) rl)
+	| x `elem` ["=","<",">"] = eval' BOOL f tree
+	| x `elem` ["+","-","*","/","^"] = eval' CALC f tree
+	| otherwise = error "Nope."
+
+
+data E = BOOL | CALC
+eval' :: E -> (String -> Float) -> BinTree Token (Either Token Float) -> Either Bool Float
+eval' BOOL f (Node ll (OP x) rl)
+	| x == "=" = Left $ l == r 
+	| x == "<" = Left $ l < r
+	| x == ">" = Left $ l > r
+	| otherwise = error "I dun goofed."
+	where
+	Right l = eval' CALC f ll
+	Right r = eval' CALC f rl
+eval' CALC f (Node ll (OP x) rl)
+	| x == "+" = Right $ l + r
+	| x == "-" = Right $ l - r
+	| x == "*" = Right $ l * r
+	| x == "/" = Right $ l / r
+	| x == "^" = Right $ l ** r
+	where
+	Right l = eval' CALC f ll
+	Right r = eval' CALC f rl
+eval' CALC f (Leaf (Left (VAR x))) = Right $ f x 
+eval' CALC _ (Leaf (Right x)) = Right x
+
+assign :: String -> Float
+assign "x" = 2
