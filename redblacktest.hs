@@ -10,21 +10,24 @@ tt :: Tree
 tt = Tree Black (Node (Tree Black (Node (Tree Red (Node (leaf) 3 (leaf))) 7 (Tree Red (Node (leaf) 10 (leaf))))) 15 (Tree Black (Node (leaf) 25 (leaf))))
  where leaf = Tree Black Leaf
 tt1 :: Tree
-tt1 = balancedInsert 9 tt
+tt1 = balancedInsert tt 9
 tt2 :: Tree
-tt2 = balancedInsert 8 tt1
+tt2 = balancedInsert tt1 8
 tt3 :: Tree
-tt3 = balancedInsert 11 tt2
+tt3 = balancedInsert tt2 11
 tt4 :: Tree
-tt4 = balancedInsert 12 tt3
+tt4 = balancedInsert tt3 12
 tt5 :: Tree
-tt5 = balancedInsert 13 tt4
+tt5 = balancedInsert tt4 13
 tt2' :: Tree
-tt2' = delete 11 tt3
+tt2' = delete tt3 11
 tt1' :: Tree
-tt1' = delete 8 tt2'
+tt1' = delete tt2' 8
 tt' :: Tree
-tt' = delete 9 tt1'
+tt' = delete tt1' 9
+
+bigtree :: Tree
+bigtree = Tree Black (Node (Tree Black (Node (Tree Black (Node (Tree Black Leaf) 2 (Tree Red (Node (Tree Black Leaf) 3 (Tree Black Leaf))))) 4 (Tree Black (Node (Tree Red (Node (Tree Black Leaf) 5 (Tree Black Leaf))) 6 (Tree Black Leaf))))) 7 (Tree Black (Node (Tree Black (Node (Tree Black Leaf) 8 (Tree Red (Node (Tree Black Leaf) 11 (Tree Black Leaf))))) 16 (Tree Red (Node (Tree Black (Node (Tree Red (Node (Tree Black Leaf) 18 (Tree Black Leaf))) 19 (Tree Black Leaf))) 24 (Tree Black(Node (Tree Red (Node (Tree Black Leaf) 25 (Tree Black Leaf))) 29 (Tree Red (Node (Tree Black Leaf) 33 (Tree Black Leaf))))))))))
 
 --Test the grey colour flips (Including the mirror ones).
 -- invars a/b1/b2/c1/c2/d/e1/e2

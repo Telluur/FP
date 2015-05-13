@@ -22,12 +22,12 @@ pp (Tree Red (Leaf)) = RBNode NodeRed [] []
 pp (Tree Black (Leaf)) = RBNode NodeBlack [] []
 pp (Tree Grey (Leaf)) = RBNode NodeGrey [] []
 
-insert :: Int -> Tree -> Tree
-insert i (Tree c (Node l n r))
-	| i < n = Tree c (Node (insert i l) n r)
-	| i > n = Tree c (Node l n (insert i r))
+insert :: Tree -> Int -> Tree
+insert (Tree c (Node l n r)) i
+	| i < n = Tree c (Node (insert l i) n r)
+	| i > n = Tree c (Node l n (insert r i))
 	| otherwise = error $ "Found duplicate value when trying to insert: " ++ (show i)
-insert i (Tree _ (Leaf)) = Tree Red (Node (leaf) i (leaf))
+insert (Tree _ (Leaf)) i = Tree Red (Node (leaf) i (leaf))
 	where
 	leaf = Tree Black (Leaf)
 
@@ -53,8 +53,8 @@ balance :: Tree -> Tree
 balance (Tree c (Node l x r)) = rebalance $ colourFlip $ Tree c (Node (balance l) x (balance r))
 balance t = t --Stops recursive balance call at leaves.
 
-balancedInsert :: Int -> Tree -> Tree
-balancedInsert i t = rootToBlack $ balance $ insert i t
+balancedInsert :: Tree -> Int -> Tree
+balancedInsert t i = rootToBlack $ balance $ insert t i
 
 leftmostValue :: Tree -> Int
 leftmostValue (Tree c (Node (Tree _ (Leaf)) n _)) = n
@@ -92,19 +92,31 @@ greyRebalance :: Tree -> Tree
 greyRebalance t@(Tree _ (Leaf)) = t
 greyRebalance (Tree c (Node l x r)) = greyColourFlip $ Tree c (Node (greyRebalance l) x (greyRebalance r))
 
-delete :: Int -> Tree -> Tree
-delete i (Tree Red (Node (Tree Black Leaf) x (Tree Black Leaf)))
+delete :: Tree -> Int -> Tree
+delete (Tree Red (Node (Tree Black Leaf) x (Tree Black Leaf))) i
 	| i == x = Tree Black (Leaf)
-	| otherwise = error $ "Value " ++ (show i) ++ " not found at final red node."
-delete i (Tree Black (Node (Tree Black Leaf) x (Tree Black Leaf)))
+	| otherwise = error $ "Value " ++ (show i) ++ " not found."
+delete (Tree Black (Node (Tree Black Leaf) x (Tree Black Leaf))) i
 	| i == x = Tree Grey Leaf
-	| otherwise = error $ "Value " ++ (show i) ++ " not found at final black node."
-delete i (Tree cx (Node l x r))
-	| i < x = greyRebalance $ Tree cx (Node (delete i l) x r)
-	| i > x = greyRebalance $ Tree cx (Node l x (delete i r))
+	| otherwise = error $ "Value " ++ (show i) ++ " not found."
+delete (Tree Black (Node (Tree Red l) x (Tree Black (Leaf)))) i
+	| i == x = Tree Black l
+	| otherwise = error $ "Value " ++ (show i) ++ " not found."
+delete (Tree cx (Node l x r)) i
+	| i < x = greyRebalance $ Tree cx (Node (delete l i) x r)
+	| i > x = greyRebalance $ Tree cx (Node l x (delete r i))
 	| i == x = greyRebalance $ Tree cx (Node l (leftmostValue r) (removeLeftmostNode r))
 
 --Helper functions
 isRed :: Tree -> Bool
 isRed (Tree Red _) = True
 isRed _ = False
+
+balancedListInsert :: Tree -> [Int] -> Tree
+balancedListInsert tree list = foldl (balancedInsert) tree list
+
+createTree :: [Int] -> Tree
+createTree list = balancedListInsert (Tree Black (Leaf)) list
+
+deleteList :: Tree -> [Int] -> Tree
+deleteList tree list = foldl (delete) tree list
