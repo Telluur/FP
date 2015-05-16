@@ -7,18 +7,20 @@ var KEYBOARDWS = new Websocket("Keyboard"
                               , KEYBOARDPORT
                               , setConnected
                               , doNothing
-                              , doNothing
-                              , retryOnUncleanCloseSetUnconnected
+                              , reportOnError
+                              , keyboardClose
                               );
         
 function keyboardInit() {
     KEYBOARDEVENTS.forEach(function (keyboardEvent, index) {
-        document.addEventListener(keyboardEvent, keyboardEventListener);    
+        document.addEventListener(keyboardEvent, keyboardEventListener);
     });
-    
-    KEYBOARDWS.connect();
+    SOCKETSTOCONNECT.addToConnect(KEYBOARDWS);
 }
 
+function keyboardClose(event) {
+    retryOnUncleanCloseSetUnconnected.call(this, event);
+}
 
 function keyboardEventListener(keyboardEvent) {
     var keyStr = translateKeyboardEventToKeyString(keyboardEvent);
@@ -49,6 +51,7 @@ function translateKeyboardEventToKeyString(keyboardEvent) {
             case 37 : keyPressed = "left"; break;
             case 39 : keyPressed = "right"; break;
             case 40 : keyPressed = "down"; break;
+            case 27 : keyPressed = "esc"; break;
         }
     }
     

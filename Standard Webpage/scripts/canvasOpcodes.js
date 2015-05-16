@@ -32,11 +32,11 @@ var RECTANGLE = 407;
 
 //PathStroke
 var PATHSTROKE = 501;
-var PATHNOSTROKE = 502;
+var NOPATHSTROKE = 502;
 
 //PathFill
 var PATHFILL = 601;
-var PATHNOFILL = 602;
+var NOPATHFILL = 602;
 
 //RenderStyle
 var CANVASCOLOR = 701;
@@ -63,9 +63,13 @@ var CANVASTEXT = 1201;
 //Font
 var FONT = 1301;
 
-//TextRender
+//TextStroke
 var TEXTSTROKE = 1401;
-var TEXTFILL = 1402;
+var NOTEXTSTROKE = 1402;
+
+//TextFill
+var TEXTFILL = 2401;
+var NOTEXTFILL = 2402;
 
 //Alignment
 var ALIGNLEFT = 1501;
@@ -88,6 +92,13 @@ var RESETTRANSFORM = 1608;
 var CSSPIXELS = 1801;
 var CSSPERCENTAGE = 1802;
 
+//CSSPosition
+var CSSPOSITION = 2201;
+
+//CSSBINDPOINT
+var CSSFROMCENTER = 2301;
+var CSSFROMDEFAULT = 2302;
+
 //ClearPart
-var ClearRectangle = 1901;
-var ClearCanvas = 1902;
+var CLEARRECTANGLE = 1901;
+var CLEARCANVAS = 1902;

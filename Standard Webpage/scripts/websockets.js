@@ -1,3 +1,27 @@
+
+function SocketsToConnect() {
+    this.toConnect = [];
+    
+    this.addToConnect = function(websocket) {
+        this.toConnect.push(websocket);
+    }
+    
+    this.tryToConnectNext = function() {
+        /*
+        for(var i =0; i < this.toConnect.length; i++) {
+            console.log(this.toConnect[i]);
+        }*/
+
+        var next = this.toConnect.shift();
+        
+        if(next) {
+            next.connect();
+        }
+    }
+}
+
+var SOCKETSTOCONNECT = new SocketsToConnect();
+
 function Websocket(name, ipaddress, port, onOpen, onMessage, onError, onClose) {
     this.name = name;
     this.ipaddress = ipaddress;
@@ -8,19 +32,24 @@ function Websocket(name, ipaddress, port, onOpen, onMessage, onError, onClose) {
     this.onMessage = onMessage;
     this.onError = onError;
     this.onClose = onClose;
-
-    this.createWebsocket = 
     
     this.connect = function() {
-        window.setTimeout(function(parent) {
-                                
+       // window.setTimeout(function(parent) {
+                                this.ws = new WebSocket(this.url);
+                                this.ws.parent = this;
+                                this.ws.onopen = this.onOpen;
+                                this.ws.onmessage = this.onMessage;
+                                this.ws.onerror = this.onError;
+                                this.ws.onclose = this.onClose;
+
+                                /*
                                 parent.ws = new WebSocket(parent.url);
                                 parent.ws.parent = parent;
                                 parent.ws.onopen = parent.onOpen;
                                 parent.ws.onmessage = parent.onMessage;
                                 parent.ws.onerror = parent.onError;
-                                parent.ws.onclose = parent.onClose;
-                           }, 0, this); //Timeout is needed in order to call the connection code in a seperate thread. The main thread does not stop and wait for the timeout of the websocket.
+                                parent.ws.onclose = parent.onClose;*/
+             //              }, 0, this); //Timeout is needed in order to call the connection code in a separate thread. The main thread does not stop and wait for the timeout of the websocket.
     }
     
     this.sendMessage = function (message) {
@@ -41,9 +70,15 @@ function Websocket(name, ipaddress, port, onOpen, onMessage, onError, onClose) {
 function doNothing() {}
 
 function setConnected(event) {
+    console.log("Tried connecting ["+ this.parent.name + "]");
     if (this.readyState == 1) {
         this.parent.connected = true;
+        console.log("Connection succesfull! [" + this.parent.name + "]");
+    } else {
+        console.log("Error: Connection opened but not ready. ["+ this.parent.name + "]");
     }
+    
+    SOCKETSTOCONNECT.tryToConnectNext();
 }
 
 function reportOnOpen(event) {
@@ -70,6 +105,8 @@ function retryOnUncleanClose(event) {
 function retryOnUncleanCloseH(object, event) {
     console.log("Websocket[" + object.parent.name + "] was closed " + (event.wasClean ? "cleanly" : "not cleanly"));
     if (!event.wasClean || true) {
-        object.parent.connect();
+        object.parent.ws = null;
+        SOCKETSTOCONNECT.addToConnect(object.parent);
+        SOCKETSTOCONNECT.tryToConnectNext();
     }
 }

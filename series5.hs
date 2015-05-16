@@ -33,6 +33,7 @@ insert (Tree _ (Leaf)) i = Tree Red (Node (leaf) i (leaf))
 
 rootToBlack :: Tree -> Tree
 rootToBlack (Tree Red node) = Tree Black node
+rootToBlack (Tree Grey node) = Tree Black node
 rootToBlack tree@(Tree Black node) = tree
 
 colourFlip :: Tree -> Tree
@@ -93,19 +94,22 @@ greyRebalance t@(Tree _ (Leaf)) = t
 greyRebalance (Tree c (Node l x r)) = greyColourFlip $ Tree c (Node (greyRebalance l) x (greyRebalance r))
 
 delete :: Tree -> Int -> Tree
-delete (Tree Red (Node (Tree Black Leaf) x (Tree Black Leaf))) i
+delete tree i = rootToBlack $ delete' tree i
+
+delete' :: Tree -> Int -> Tree
+delete' (Tree Red (Node (Tree Black Leaf) x (Tree Black Leaf))) i
 	| i == x = Tree Black (Leaf)
 	| otherwise = error $ "Value " ++ (show i) ++ " not found."
-delete (Tree Black (Node (Tree Black Leaf) x (Tree Black Leaf))) i
+delete' (Tree Black (Node (Tree Black Leaf) x (Tree Black Leaf))) i
 	| i == x = Tree Grey Leaf
 	| otherwise = error $ "Value " ++ (show i) ++ " not found."
-delete (Tree Black (Node (Tree Red l) x (Tree Black (Leaf)))) i
-	| i < x = Tree Black (Node (delete (Tree Red l) i) x (Tree Black (Leaf)))
+delete' (Tree Black (Node (Tree Red l) x (Tree Black (Leaf)))) i
+	| i < x = Tree Black (Node (delete' (Tree Red l) i) x (Tree Black (Leaf)))
 	| i == x = Tree Black l
 	| otherwise = error $ "Value " ++ (show i) ++ " not found."
-delete (Tree cx (Node l x r)) i
-	| i < x = greyRebalance $ Tree cx (Node (delete l i) x r)
-	| i > x = greyRebalance $ Tree cx (Node l x (delete r i))
+delete' (Tree cx (Node l x r)) i
+	| i < x = greyRebalance $ Tree cx (Node (delete' l i) x r)
+	| i > x = greyRebalance $ Tree cx (Node l x (delete' r i))
 	| i == x = greyRebalance $ Tree cx (Node l (leftmostValue r) (removeLeftmostNode r))
 
 --Helper functions

@@ -19,15 +19,36 @@ function handleIncomingMessage(event) {
 var GRAPHICALWS = new Websocket( "Canvas"
                                , IPADDRESS
                                , GRAPHICALPORT
-                               , setConnected
+                               , graphicalConnectionOpen
                                , handleIncomingMessage
-                               , doNothing
-                               , retryOnUncleanCloseSetUnconnected
+                               , reportOnError
+                               , graphicalClose
                                );
                                
                                
 function graphicalInit() {
-    GRAPHICALWS.connect();
+    SOCKETSTOCONNECT.addToConnect(GRAPHICALWS);
+}
+
+graphicalInit();
+
+function graphicalConnectionOpen(event) {
+    //Destroy children
+    resetContainer();
+    setConnected.call(this, event);
+}
+
+function graphicalClose(event) {
+    retryOnUncleanCloseSetUnconnected.call(this, event);
+}
+
+function resetContainer() {
+    var container = getContainer();
+    
+    while(container.hasChildNodes()) {
+        MOUSECAPTUREELEMENTS.removeCaptureElementByDomElement(container.firstChild);
+        container.removeChild(container.firstChild);
+    }
 }
 
 function getContainer() {
@@ -63,8 +84,6 @@ function sendMeasuredTextResponse(route, opCode, canvasId, text, fontfamily, fon
                       
     GRAPHICALWS.sendJSONObject(responseObj);
 }
-
-graphicalInit();
 
 // Top Object
 // ___________________________________________________
@@ -136,7 +155,7 @@ function handleCanvasOut(canvasOut) {
     }
 }
 
-function performSetupCanvas(canvasId, zIndex, canvasDimensions, canvasPosition) {
+function performSetupCanvas(canvasId, zIndex, canvasDimensions, cssPosition) {
     var canvas = getCanvas(canvasId);
 
     if(!canvas) {
@@ -151,16 +170,24 @@ function performSetupCanvas(canvasId, zIndex, canvasDimensions, canvasPosition) 
     canvas.width = canvasDimensions[0];
     canvas.height = canvasDimensions[1];
     canvas.style.zIndex = zIndex;
-    canvas.style.left = handleCSSUnit(canvasPosition[0]);
-    canvas.style.top = handleCSSUnit(canvasPosition[1]);
+    canvas.style.left = "0px";
+    canvas.style.top = "0px";
+    
+    handleCSSPosition(canvas, cssPosition);
     
     var ctx = canvas.getContext('2d');
     ctx.textBaseline = "hanging";
     logActivity("SetupCanvas");
+    
+    //Setup at mouse for capture
+    MOUSECAPTUREELEMENTS.addCaptureElement(canvasId, CANVAS, canvas);
 }
 
 function performTeardownCanvas(canvasId){
     var canvas = getCanvas(canvasId);
+    
+    //Teardown at mouse for capture
+    MOUSECAPTUREELEMENTS.removeCaptureElementByDomElement(canvas);
     
     if(canvas) {
         var container = getContainer();
@@ -215,6 +242,7 @@ function handleCanvasOperation(ctx, canvasOperation) {
                            , canvasOperation.a[0]
                            , canvasOperation.a[1]
                            , canvasOperation.a[2]
+                           , canvasOperation.a[3]
                            );
             break;
         case DOTRANSFORM:
@@ -245,22 +273,11 @@ function performDrawPath(ctx, screenStartingPoint, listPathPart, pathStroke, pat
     logActivity("DrawPath");
 }
 
-function performDrawText(ctx, canvasText, screenPoint, textRender) {
+function performDrawText(ctx, canvasText, screenPoint, textStroke, textFill) {
     var text = handleCanvasText(ctx, canvasText);
     
-    handleTextRender(ctx, textRender);
-    
-    switch(textRender.t) {
-        case TEXTSTROKE:
-            ctx.strokeText(text, screenPoint[0], screenPoint[1]);
-            break;
-        case TEXTFILL:
-            ctx.fillText(text, screenPoint[0], screenPoint[1]);
-            break;
-        default:
-            error("Undefined case in DrawText/performTextRender");
-            break;
-    }
+    handleTextStroke(ctx, text, screenPoint, textStroke);
+    handleTextFill(ctx, text, screenPoint, textFill);
     
     logActivity("DrawText");
 }
@@ -385,9 +402,9 @@ function performRectangle(ctx, screenPoint, screenDimensions) {
 function handlePathStroke(ctx, pathStroke) {
     switch(pathStroke.t) {
         case PATHSTROKE:
-            performPathStroke(ctx, pathStroke.a[0]);
+            performPathStroke(ctx, pathStroke.a[0], pathStroke.a[1]);
             break;
-        case PATHNOSTROKE:
+        case NOPATHSTROKE:
             break;
         default:
             error("Undefined case in handlePathStroke");
@@ -395,8 +412,9 @@ function handlePathStroke(ctx, pathStroke) {
     }
 }
 
-function performPathStroke(ctx, renderStyle) {
+function performPathStroke(ctx, lineThickness, renderStyle) {
     handleRenderStrokeStyle(ctx, renderStyle);
+    ctx.lineWidth = lineThickness;
     ctx.stroke();
     
     logActivity("PathStroke");
@@ -410,7 +428,7 @@ function handlePathFill(ctx, pathFill) {
         case PATHFILL:
             performPathFill(ctx, pathFill.a[0]);
             break;
-        case PATHNOFILL:
+        case NOPATHFILL:
             break;
         default:
             error("Undefined case in handlePathFill");
@@ -627,19 +645,42 @@ function handleFont(ctx, font) {
 }
 
 
-// TextRender
+// TextStroke
 // ___________________________________________________
-function handleTextRender(ctx, textRender) {
-    switch(textRender.t) {
+function handleTextStroke(ctx, text, screenPoint, textStroke) {
+    switch(textStroke.t) {
         case TEXTSTROKE:
-            handleRenderStrokeStyle(ctx, textRender.a[0]);
+            performTextStroke(ctx, text, screenPoint, textStroke.a[0], textStroke.a[1]);
             break;
-        case TEXTFILL:
-            handleRenderFillStyle(ctx, textRender.a[0]);
+        case NOTEXTSTROKE:
             break;
     }
 }
 
+function performTextStroke(ctx, text, screenPoint, screenLineThickness, textStrokeRenderStyle) {
+    ctx.lineWidth = screenLineThickness + "px";
+    handleRenderStrokeStyle(ctx, textStrokeRenderStyle);
+    
+    ctx.strokeText(text, screenPoint[0], screenPoint[1]);
+}
+
+// TextFill
+// ___________________________________________________
+function handleTextFill(ctx, text, screenPoint, textFill) {
+    switch(textFill.t) {
+        case TEXTFILL:
+            performTextFill(ctx, text, screenPoint, textFill.a[0]);
+            break;
+        case NOTEXTFILL:
+            break;
+    }
+}
+
+function performTextFill(ctx, text, screenPoint, textFillRenderStyle) {
+    handleRenderFillStyle(ctx, textFillRenderStyle);
+    
+    ctx.fillText(text, screenPoint[0], screenPoint[1]);
+}
 
 // Alignment
 // ___________________________________________________
@@ -755,6 +796,69 @@ function performSetTransform(ctx, transformationMatrix) {
 function performResetTransform(ctx) {
     logActivity("ResetTransform");
     ctx.resetTransform();
+}
+
+
+// CSSPosition
+// ___________________________________________________
+function handleCSSPosition(element, cssPosition) {
+    switch(cssPosition.t) {
+        case CSSPOSITION:
+            performCSSPosition(element, cssPosition.a[0], cssPosition.a[1]);
+            break;
+        default:
+            error("Undefined case in handleCSSPosition");
+            break;
+    }
+}
+
+function performCSSPosition(element, cssBindPoint, cssMeasurements) {
+    logActivity("CSSPosition");
+    handleCSSBindPoint(element, cssBindPoint);
+    handleCSSMeasurements(element, cssMeasurements);
+}
+
+
+// CSSBindPoint
+// ___________________________________________________
+function handleCSSBindPoint(element, cssBindPoint) {
+    switch(cssBindPoint.t) {
+        case CSSFROMCENTER:
+            performCSSFromCenter(element);
+            break;
+        case CSSFROMDEFAULT:
+            performCSSFromDefault(element);
+            break;
+        default:
+            error("Undefined case in handleCSSBindPoint");
+            break;
+    }
+}
+
+function performCSSFromCenter(element) {
+    logActivity("CSSFromCenter");
+    var elementWidth = safeGetProperty(element, "width");
+    var elementHeight = safeGetProperty(element, "height");
+    var elementLeftOffset = Math.round(elementWidth / 2);
+    var elementTopOffset = Math.round(elementHeight / 2);
+    
+    element.style.marginTop = "-" + elementTopOffset + "px";
+    element.style.marginRight = "0px";
+    element.style.marginBottom = "0px";
+    element.style.marginLeft = "-" + elementLeftOffset + "px";
+}
+
+function performCSSFromDefault(element) {
+    logActivity("CSSFromDefault");
+}
+
+
+// CSSMeasurements
+// ___________________________________________________
+function handleCSSMeasurements(element, cssMeasurements) {
+    logActivity("CSSMeasurements");
+    element.style.left = handleCSSUnit(cssMeasurements[0]);
+    element.style.top = handleCSSUnit(cssMeasurements[1]);
 }
 
 
