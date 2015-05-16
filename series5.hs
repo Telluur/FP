@@ -100,6 +100,7 @@ delete (Tree Black (Node (Tree Black Leaf) x (Tree Black Leaf))) i
 	| i == x = Tree Grey Leaf
 	| otherwise = error $ "Value " ++ (show i) ++ " not found."
 delete (Tree Black (Node (Tree Red l) x (Tree Black (Leaf)))) i
+	| i < x = Tree Black (Node (delete (Tree Red l) i) x (Tree Black (Leaf)))
 	| i == x = Tree Black l
 	| otherwise = error $ "Value " ++ (show i) ++ " not found."
 delete (Tree cx (Node l x r)) i
