@@ -52,13 +52,21 @@ data ProgramState
 -}
 beginGraph = Graph allNodes allEdges Undirected Unweighted
            where
-            allNodes = [ ('a', (50, 50), Red)
-                       , ('b', (150, 50), Blue)
-                       , ('c', (200, 200), Orange)
+            allNodes = [ ('a', (50, 50), Yellow)
+                       , ('b', (150, 50), Yellow)
+                       , ('c', (350, 50), Orange)
+                       , ('d', (450, 50), Orange)
+                       , ('e', (200, 200), Purple)
+                       , ('f', (300, 200), Green)
                        ]
-            allEdges = [ ('a', 'b', Green, 5, Thick)
-                       , ('c', 'b', Orange, 3, Thin)
-                       , ('c', 'a', Purple, 2, Thin)
+            allEdges = [ ('a', 'b', Black, 5, Thin)
+                       , ('b', 'c', Black, 4, Thin)
+                       , ('c', 'd', Black, 3, Thin)
+                       , ('f', 'c', Black, 2, Thin)
+                       , ('f', 'd', Black, 1, Thin)
+                       , ('e', 'a', Black, 2, Thin)
+                       , ('e', 'b', Black, 3, Thin)
+                       , ('f', 'e', Black, 4, Thin)
                        ]
 
 
@@ -80,7 +88,9 @@ instructions = [ "Instructions"
                , "Press 'f', click on two nodes to delete an edge"
                , "Press 'c', click on a node to color it red"
                , "Press 'b', click on a node to color its directed neighbors blue"
+               , "Press 'p', Click on two node to check if a path from the first to the second selected nodes"
                , "Press 'o', Colors all nodes Orange"
+               , "Press 'x' Checks whether the graph is strongly connected"
                , "Press 'esc' to abort the current operation and start another"
                ]
 
@@ -235,20 +245,18 @@ renameNodeInEdge (oldL, _, _) newL (el1, el2, color, weight, thickness)
     | oldL == el2 = (el1, newL, color, weight, thickness)
     | otherwise   = (el1, el2, color, weight, thickness)
 
-directedNeighbors :: Node -> Graph -> [Node]
-directedNeighbors node g = nb
-  where
-    nbedges = findDirectedEdgesAtNode node g
-    nb = map (flip getHead g) nbedges
-
 neighbors :: Node -> Graph -> [Node]
-neighbors node@(l, _, _) g = tails ++ heads
+neighbors node@(l, _, _) g@(Graph{directed=Undirected}) = tails ++ heads
   where
     neighborEdges = findEdgesAtNode node g
     tailEdges = filter (\(t, _, _, _, _) -> t == l) neighborEdges
     headEdges = filter (\(_, h, _, _, _) -> h == l) neighborEdges
     tails = map (\(_, hl, _, _, _) -> (getNode hl g)) tailEdges
     heads = map (\(tl, _, _, _, _) -> (getNode tl g)) headEdges
+neighbors node g@(Graph{directed=Directed}) = nb
+  where
+    nbedges = findDirectedEdgesAtNode node g
+    nb = map (flip getHead g) nbedges
 
 
 
@@ -256,17 +264,10 @@ neighbors node@(l, _, _) g = tails ++ heads
 {- | Color the (directed) neigbours of a node
 -}
 colorNeighbors :: Color -> Node -> Graph -> Graph
-colorNeighbors newColor node g@(Graph{directed=Undirected})
+colorNeighbors newColor node g
   = addNewNodes
   where
     neighborNodes = neighbors node g
-    newNeighbors = map (\(l, p, _) -> (l, p, newColor)) neighborNodes
-    remOldNodes = foldl (flip removeNode) g neighborNodes
-    addNewNodes = foldl (addNode) remOldNodes newNeighbors
-colorNeighbors newColor node  g@(Graph{directed=Directed})
-  = addNewNodes
-  where
-    neighborNodes = directedNeighbors node g
     newNeighbors = map (\(l, p, _) -> (l, p, newColor)) neighborNodes
     remOldNodes = foldl (flip removeNode) g neighborNodes
     addNewNodes = foldl (addNode) remOldNodes newNeighbors
@@ -280,6 +281,50 @@ colorAll color g = addNewNodes
     newNodes = map (\(l, p, _) -> (l, p, color)) oldNodes
     remOldNodes = foldl (flip removeNode) g oldNodes
     addNewNodes = foldl (addNode) remOldNodes newNodes
+
+{- | Checks whether a path exists from node to node.
+-}
+existsPath :: Node -> Node -> Graph -> Bool
+existsPath from to g = to `elem` (reachable g from)
+
+
+{- | Returns a list of nodes which is reachable by node n
+-}
+reachable :: Graph -> Node -> [Node]
+reachable g node = reachable' g [node] (neighbors node g)
+
+reachable' :: Graph -> [Node] -> [Node] -> [Node]
+reachable' g rns [] = rns
+reachable' g rns nns
+  = reachable' g rns' diff'
+  where
+    nbs = map (flip neighbors g) nns
+    rns' = rns ++ nns
+    diff = map (reachable'' rns') nbs
+    diff' = foldl (++) [] diff
+
+reachable'' :: [Node] -> [Node] -> [Node]
+reachable'' rns' nb = filter (flip notElem rns') nb
+
+{- | Checks whether a graph is strongly connected.
+-}
+isStronglyConnected :: Graph -> Bool
+isStronglyConnected g = foldl (&&) True checks'
+  where
+    allNodes = nodes g
+    checks = tuplePairs allNodes
+    checks' = map (\(a,b) -> existsPath a b g) checks
+
+--Helper functions
+tuplePairs :: Eq t => [t] -> [(t, t)]
+tuplePairs list = foldl (++) [] (tuplePairs' list list)
+
+tuplePairs' :: Eq t => [t] -> [t] -> [[(t, t)]]
+tuplePairs' [] _ = []
+tuplePairs' l@(x:xs) list = (map (\a -> (x,a)) gen) : (tuplePairs' xs list)
+  where
+    gen = filter (/=x) list
+
 
 
 {- | The eventloop
@@ -389,13 +434,34 @@ eventloop ps@(ProgramState "b" _ _ g) (InGraphs (Mouse (Click _) p))
     Just nodeAtPos@(label, _, _) = nodeAtPosM
     g' = colorNeighbors Blue nodeAtPos g
 
-{- | If 'b' has been pressed and a node selected,
-the neighbours of the selected node will be colored blue
+{- | If 'o' has been pressed all nodes will be colored orange
 -}
-eventloop ps@(ProgramState _ _ _ g) (InGraphs (Key ['u']))
+eventloop ps@(ProgramState _ _ _ g) (InGraphs (Key ['o']))
   = (ProgramState [] Nothing Nothing g', [OutGraphs $ DrawGraph g', OutStdOut $ S.StdOutMessage $ "Colored all nodes orange\n"])
   where
     g' = colorAll Orange g
+
+{- | If 's' has been pressed, console will check whether strongly connected
+-}
+eventloop ps@(ProgramState _ _ _ g) (InGraphs (Key ['x']))
+  = (ProgramState [] Nothing Nothing g, [OutGraphs $ DrawGraph g, OutStdOut $ S.StdOutMessage $ "Graph is strongly connected: " ++ (show b) ++ "\n"])
+  where
+    b = isStronglyConnected g
+
+
+{- | If 'p' has been pressed, a node selected and a new node is selected
+The console will output a boolean if there exists a path.
+-}
+eventloop ps@(ProgramState "p" (Just node1s) _ g) (InGraphs (Mouse (Click _) p))
+  | nodeAtPosM == Nothing = (ps, [])
+  | otherwise = (ProgramState [] Nothing Nothing g, [OutGraphs $ DrawGraph g, OutStdOut $ S.StdOutMessage $ "Path from node '" ++ [l1] ++ "' to '" ++ [l2] ++ "': " ++ (show b) ++ "\n"])
+  where
+    (l1, _, _) = node1s
+    (l2, _, _) = nodeAtPos
+    nodeAtPosM = onNode allNodes p
+    allNodes = nodes g
+    (Just nodeAtPos) = nodeAtPosM
+    b = existsPath node1s nodeAtPos g
 
 {- | If 'n' has been pressed and the mouse has
 clicked at a position where there is no node yet,
