@@ -50,7 +50,7 @@ data ProgramState
 {- | Begingraph
    This is the start state of the graph
 -}
-beginGraph = Graph allNodes allEdges Undirected Unweighted
+beginGraph = Graph allNodes allEdges Directed Unweighted
            where
             allNodes = [ ('a', (50, 50), Yellow)
                        , ('b', (150, 50), Yellow)
@@ -89,6 +89,7 @@ instructions = [ "Instructions"
                , "Press 'c', click on a node to color it red"
                , "Press 'b', click on a node to color its directed neighbors blue"
                , "Press 'p', Click on two node to check if a path from the first to the second selected nodes"
+               , "Press 'l', Click on two nodes to display the paths between the nodes."
                , "Press 'o', Colors all nodes Orange"
                , "Press 'x' Checks whether the graph is strongly connected"
                , "Press 'esc' to abort the current operation and start another"
@@ -315,7 +316,29 @@ isStronglyConnected g = foldl (&&) True checks'
     checks = tuplePairs allNodes
     checks' = map (\(a,b) -> existsPath a b g) checks
 
+{- | Calculates all the paths from 'from' to 'to' excluding loops.
+-}
+paths :: Graph -> Node -> Node -> [Path]
+paths g from to = filter (/=[]) p
+  where
+    nbs = neighbors from g
+    p = foldl (++) [] $ map (paths' g from to [from]) nbs
+
+paths' :: Graph -> Node -> Node -> [Node] -> Node -> [Path]
+paths' g from to path next
+  | next == to = [path ++ [next]]
+  | newnbs == [] = [[]]
+  | otherwise = foldl (++) [] $ map (paths' g from to (path ++ [next])) newnbs
+  where
+    newnbs = filter (flip notElem path) (neighbors next g)
+
+--cheapestPaths :: [(Path, Cost)] -> [(Path, Cost)]
+--cheapestPaths (:xs)
+
 --Helper functions
+type Path = [Node]
+type Cost = Int
+
 tuplePairs :: Eq t => [t] -> [(t, t)]
 tuplePairs list = foldl (++) [] (tuplePairs' list list)
 
@@ -325,6 +348,11 @@ tuplePairs' l@(x:xs) list = (map (\a -> (x,a)) gen) : (tuplePairs' xs list)
   where
     gen = filter (/=x) list
 
+prettyPath :: Path -> [Label]
+prettyPath path = map (\(l, _, _) -> l) path
+
+prettyPathList :: [Path] -> [[Label]]
+prettyPathList pl = map (prettyPath) pl
 
 
 {- | The eventloop
@@ -441,7 +469,7 @@ eventloop ps@(ProgramState _ _ _ g) (InGraphs (Key ['o']))
   where
     g' = colorAll Orange g
 
-{- | If 's' has been pressed, console will check whether strongly connected
+{- | If 'x' has been pressed, console will check whether strongly connected
 -}
 eventloop ps@(ProgramState _ _ _ g) (InGraphs (Key ['x']))
   = (ProgramState [] Nothing Nothing g, [OutGraphs $ DrawGraph g, OutStdOut $ S.StdOutMessage $ "Graph is strongly connected: " ++ (show b) ++ "\n"])
@@ -462,6 +490,20 @@ eventloop ps@(ProgramState "p" (Just node1s) _ g) (InGraphs (Mouse (Click _) p))
     allNodes = nodes g
     (Just nodeAtPos) = nodeAtPosM
     b = existsPath node1s nodeAtPos g
+
+{- | If 'l' has been pressed, a node selected and a new node is selected
+The console will output all possible paths (Without loops) from node to node
+-}
+eventloop ps@(ProgramState "l" (Just node1s) _ g) (InGraphs (Mouse (Click _) p))
+  | nodeAtPosM == Nothing = (ps, [])
+  | otherwise = (ProgramState [] Nothing Nothing g, [OutGraphs $ DrawGraph g, OutStdOut $ S.StdOutMessage $ "Paths from node '" ++ [l1] ++ "' to '" ++ [l2] ++ "': " ++ (show list) ++ "\n"])
+  where
+    (l1, _, _) = node1s
+    (l2, _, _) = nodeAtPos
+    nodeAtPosM = onNode allNodes p
+    allNodes = nodes g
+    (Just nodeAtPos) = nodeAtPosM
+    list = prettyPathList $ paths g node1s nodeAtPos
 
 {- | If 'n' has been pressed and the mouse has
 clicked at a position where there is no node yet,
