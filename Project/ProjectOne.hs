@@ -66,23 +66,6 @@ prove c (x@(Rule (predi, (Variable ident)) clauses):xs) (Rule (qpredi, Constant 
       (Rule (_, (Constant _)) clauses') = substitute x qident
 prove _ _ _ = False
 
-{-
-See comment down below, this will not substitue variables for other variables.
-
-If this is undesired bahaviour, comment this subRules function
- and uncomment the one further below.
--}
-subRules :: Program -> Query -> [Query]
-subRules (x@(Rule r@(predi, Variable ident) _):xs) q@(Rule qr@(qpredi, Variable qident) _)
-  | r == qr = x : subRules xs q
-  | otherwise = subRules xs q
-subRules (x:xs) q = subRules xs q
-subRules [] _ = []
-
-{-
---Uncomment if the query r(Y) should substitute 'r(X) := p(X)' to 'r(Y) := p(Y)' and thus evaluate to results.
---Or leave commented to imediatelly fail.
-
 --Makes sure that all identifiers that are constants will evaluate. eg: Query: r(Y) while the program only holds r(X)
 subRules :: Program -> Query -> [Query]
 subRules (x@(Rule (predi, Variable ident) _):xs) q@(Rule (qpredi, Variable qident) _)
@@ -98,7 +81,6 @@ varSubstitute (Rule x@(_, Variable _) xs) ident = Rule (varSubstitute' ident x) 
 varSubstitute' :: Identifier -> (Predicate, Argument) -> (Predicate, Argument)
 varSubstitute' ident (predi, Variable vari) = (predi, Variable ident) --Variable in tuple, sub.
 varSubstitute' _ o@(predi, Constant _) = o -- Constant in tuple, do not sub.
--}
 
 --Iterates over the possible subtitution queries, if eval to true, add to result list. This can yield duplicates.
 substitutions :: Program -> Program -> Query -> [Clause]
