@@ -4,10 +4,10 @@ module ProjectOne where
 Data structures
 -}
 data Clause = Fact (Predicate, Identifier)
-  | Rule (Predicate, ClauseType) [(Predicate, ClauseType)]
+  | Rule (Predicate, Argument) [(Predicate, Argument)]
   deriving (Eq)
 
-data ClauseType = Variable Identifier | Constant Identifier deriving (Eq)
+data Argument = Variable Identifier | Constant Identifier deriving (Eq)
 
 type Query = Clause
 type Identifier = [Char]
@@ -20,10 +20,10 @@ pretty Printing
 -}
 instance Show Clause where
   show (Fact (predi, ident)) = predi ++ "(" ++ ident ++ "). "
-  show (Rule (predi, clausetype) []) = predi ++ "(" ++ (show clausetype) ++ ")" --Support for printing substitution query
-  show (Rule (predi, clausetype) xs) = predi ++ "(" ++ (show clausetype) ++ ") := " ++ ((init $ foldl (++) "" $ map (\(a,b) -> (a ++ "(" ++ show(b) ++ "),")) xs) ++ ".")
+  show (Rule (predi, argument) []) = predi ++ "(" ++ (show argument) ++ ")" --Support for printing substitution query
+  show (Rule (predi, argument) xs) = predi ++ "(" ++ (show argument) ++ ") := " ++ ((init $ foldl (++) "" $ map (\(a,b) -> (a ++ "(" ++ show(b) ++ "),")) xs) ++ ".")
 
-instance Show ClauseType where
+instance Show Argument where
   show (Variable ident) = ident
   show (Constant ident) = ident
 
@@ -95,7 +95,7 @@ subRules [] _ = []
 varSubstitute :: Clause -> Identifier -> Clause
 varSubstitute (Rule x@(_, Variable _) xs) ident = Rule (varSubstitute' ident x) $ map (varSubstitute' ident) xs
 
-varSubstitute' :: Identifier -> (Predicate, ClauseType) -> (Predicate, ClauseType)
+varSubstitute' :: Identifier -> (Predicate, Argument) -> (Predicate, Argument)
 varSubstitute' ident (predi, Variable vari) = (predi, Variable ident) --Variable in tuple, sub.
 varSubstitute' _ o@(predi, Constant _) = o -- Constant in tuple, do not sub.
 -}
@@ -116,7 +116,7 @@ substitutions _ [] _ = []
 substitute :: Clause -> Identifier -> Clause
 substitute (Rule x@(_, Variable _) xs) ident = Rule (substitute' ident x) $ map (substitute' ident) xs
 
-substitute' :: Identifier -> (Predicate, ClauseType) -> (Predicate, ClauseType)
+substitute' :: Identifier -> (Predicate, Argument) -> (Predicate, Argument)
 substitute' ident (predi, Variable vari) = (predi, Constant ident) --Variable in tuple, sub.
 substitute' _ o@(predi, Constant _) = o -- Constant in tuple, do not sub.
 
