@@ -5,11 +5,11 @@ import Data.Char
 import Data.List
 
 --1
-myfilter :: (a -> Bool) -> [a] -> [a] 
-myfilter _ [] = []  
-myfilter p (x:xs)   
-    | p x       = x : myfilter p xs  
-    | otherwise = myfilter p xs  
+myfilter :: (a -> Bool) -> [a] -> [a]
+myfilter _ [] = []
+myfilter p (x:xs)
+    | p x       = x : myfilter p xs
+    | otherwise = myfilter p xs
 
 myfoldr :: (a -> b -> b) -> b -> [a] -> b
 myfoldr f acc []     = acc
@@ -19,10 +19,10 @@ myfoldl :: (a -> b -> a) -> a -> [b] -> a
 myfoldl f acc []     =  acc
 myfoldl f acc (x:xs) =  myfoldl f (f acc x) xs
 
-myzipWith :: (a -> b -> c) -> [a] -> [b] -> [c]  
-myzipWith _ [] _ = []  
-myzipWith _ _ [] = []  
-myzipWith f (x:xs) (y:ys) = f x y : myzipWith f xs ys 
+myzipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+myzipWith _ [] _ = []
+myzipWith _ _ [] = []
+myzipWith f (x:xs) (y:ys) = f x y : myzipWith f xs ys
 
 --2
 --a
@@ -40,77 +40,77 @@ db = [
 	]
 
 --b
-name :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> [Char]
+name :: (Num a, Ord a) => (String,a,String,String) -> String
 name (name, age, sex, place) = name
 
-age :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> a
+age :: (Num a, Ord a) => (String,a,String,String) -> a
 age (name, age, sex, place) = age
-	
-sex :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> [Char]
+
+sex :: (Num a, Ord a) => (String,a,String,String) -> String
 sex (name, age, sex, place) = sex
-	
-place :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> [Char]
+
+place :: (Num a, Ord a) => (String,a,String,String) -> String
 place (name, age, sex, place) = place
 
 --c
 --recursion
-increaseAgeR :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
+increaseAgeR :: (Num a) => a -> [(String,a,String,String)] -> [(String,a,String,String)]
 increaseAgeR n [] = []
-increaseAgeR n ((a,b,c,d):xs) = (a,b+n,c,d) : increaseAgeR n xs 
+increaseAgeR n ((a,b,c,d):xs) = (a,b+n,c,d) : increaseAgeR n xs
 
 --list comprehension
-increaseAgeC :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
+increaseAgeC :: (Num a) => a -> [(String,a,String,String)] -> [(String,a,String,String)]
 increaseAgeC n db = [ (a,b+n,c,d) | (a,b,c,d) <- db]
 
 --higher order function
-increaseAgeHO :: (Num a) => a -> [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
-increaseAgeHO n db = map (\(a,b,c,d) -> (a,b+n,c,d)) db
+increaseAgeHO :: (Num a) => a -> [(String,a,String,String)] -> [(String,a,String,String)]
+increaseAgeHO n = map (\(a,b,c,d) -> (a,b+n,c,d))
 
 --d
-womenBetween30And40 :: (Num a, Ord a) => ([Char],a,[Char],[Char]) -> Bool
+womenBetween30And40 :: (Num a, Ord a) => (String,a,String,String) -> Bool
 womenBetween30And40 (_,b,c,_) = (b > 30) && (b < 40) && (c == "female")
 
 --recursion
-womenR :: (Num a, Ord a) => [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
+womenR :: (Num a, Ord a) => [(String,a,String,String)] -> [(String,a,String,String)]
 womenR [] = []
 womenR ((a,b,c,d):xs)
 	| womenBetween30And40 (a,b,c,d) = (a,b,c,d) : womenR xs
-	| otherwise = womenR xs 
-	
---list comprehension 
-womenC :: (Num a, Ord a) => [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
+	| otherwise = womenR xs
+
+--list comprehension
+womenC :: (Num a, Ord a) => [(String,a,String,String)] -> [(String,a,String,String)]
 womenC db = [ (a,b,c,d) | (a,b,c,d) <- db, womenBetween30And40 (a,b,c,d)]
 
 --higher order function
-womenHO :: (Num a, Ord a) => [([Char],a,[Char],[Char])] -> [([Char],a,[Char],[Char])]
-womenHO db = filter (womenBetween30And40) db
+womenHO :: (Num a, Ord a) => [(String,a,String,String)] -> [(String,a,String,String)]
+womenHO = filter womenBetween30And40
 
 --e
-ageByName :: (Num a, Ord a) => [Char] -> [([Char],a,[Char],[Char])] -> a
+ageByName :: (Num a, Ord a) => String -> [(String,a,String,String)] -> a
 ageByName name ((a,b,c,d):xs)
-	| (map toLower name) == (map toLower a) = b
+	| map toLower name == map toLower a = b
 	| otherwise = ageByName name xs
 
---f 
+--f
 persondb = [
-	(Person "Rick" 30 "male" "Enschede"),
-	(Person "Albert" 21 "male" "Amsterdam"),
-	(Person "Bert" 25 "male" "Rotterdam")
+	Person "Rick" 30 "male" "Enschede",
+	Person "Albert" 21 "male" "Amsterdam",
+	Person "Bert" 25 "male" "Rotterdam"
 	]
-	
+
 data Person = Person {
-	nameT :: [Char],
+	nameT :: String,
 	ageT :: Int,
-	sexT :: [Char],
-	placeT :: [Char]
-	}deriving(Eq, Show) 
+	sexT :: String,
+	placeT :: String
+	}deriving(Eq, Show)
 
 instance Ord Person where
 	compare x y = compare (ageT x) (ageT y)
 
 
 sortByAge :: (Ord Person) => [Person] -> [Person]
-sortByAge db = sort db
+sortByAge = sort
 
 --3
 --a
@@ -137,7 +137,7 @@ dividersHO :: Integer -> [Integer]
 dividersHO n = 1 : filter ((==0) . rem n) [2 .. n `div` 2]
 
 isPrimeAlt :: Integer -> Bool
-isPrimeAlt n = 1 == (length $ dividersHO n)
+isPrimeAlt n = 1 == length (dividersHO n)
 
 --4
 --a
@@ -152,7 +152,7 @@ If we were to make the pyth function infinite, b and c would never inflate, thus
 --b
 {-
 When generating Pythagorean Triples, the only symmetries that can arise are in the form of (a,b,c) -> (b,a,c)
-If we make sure that b is always equal or greater than a, no duplicates can exists. 
+If we make sure that b is always equal or greater than a, no duplicates can exists.
 Optimization: C must always be larger than a and b. So we only generate from b to n.
 Possible optimization: Remove generator for c and check if a^2 + b^2 is a natural number.
 -}
@@ -169,18 +169,18 @@ increasing [x] = True
 increasing (x:y:xs)
 	| x < y = increasing (y:xs)
 	| otherwise = False
-	
+
 --b
 list5b1 = [1,2,2,3,3,4,4,5,5]
 list5b2 = [1,2,3,4,3,7,8,9]
 
 --Weird typecast in de eerste guard kan nooit de bedoeling zijn...
-weaklyDecreasing :: (Ord a, Num a, Integral a) => [a] -> Bool 
+weaklyDecreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
 weaklyDecreasing [x] = True
 weaklyDecreasing list@(x:xs)
-	| fromIntegral x > ((fromIntegral $ sum xs) / (fromIntegral $ length xs)) = weaklyDecreasing xs
+	| fromIntegral x > (fromIntegral (sum xs) / fromIntegral (length xs)) = weaklyDecreasing xs
 	| otherwise = False
-	
+
 weaklyIncreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
 weaklyIncreasing list = weaklyDecreasing $ reverse list
 
@@ -195,13 +195,13 @@ list65 = [5,4,3]				--Neither
 isSublist :: (Eq a, Num a) => [a] -> [a] -> Bool
 isSublist [] _ = False
 isSublist _ [] = False
-isSublist  sub@(x:xs) list@(y:ys) = prec sub list|| isSublist sub ys
+isSublist  sub@(x:xs) list@(y:ys) = prec sub list || isSublist sub ys
 
 prec :: (Eq a, Num a) => [a] -> [a] -> Bool
 prec [] [] = True
 prec _ [] = False
 prec [] (x:xs)  = True
-prec sub@(x:xs) list@(y:ys) 
+prec sub@(x:xs) list@(y:ys)
 	| x == y = prec xs ys
 	| otherwise = False
 
@@ -212,21 +212,21 @@ isPartialSublist _ [] = False
 isPartialSublist sub@(x:xs) list@(y:ys)
 	| x == y = isPartialSublist xs ys
 	| otherwise = isPartialSublist sub ys
-	
+
 --7
 --a
 bubble :: (Ord a) => [a] -> [a]
 bubble (x:y:xs)
     | x > y = y : bubble (x:xs)
     | otherwise = x : bubble (y:xs)
-bubble (x) = (x)
+bubble (x) = x
 
 --helper function for applying bubble (length n) times.
 bubblehelp :: (Ord a) => [a] -> Int -> [a]
-bubblehelp xs i 
-    | i == (length xs) = xs
-    | otherwise = bubblehelp (bubble xs) (i + 1) 
- 
+bubblehelp xs i
+    | i == length xs = xs
+    | otherwise = bubblehelp (bubble xs) (i + 1)
+
 bubblesort :: (Ord a) => [a] -> [a]
 bubblesort xs = bubblehelp xs 0
 
@@ -234,7 +234,7 @@ bubblesort xs = bubblehelp xs 0
 mmsort :: (Ord a) => [a] -> [a]
 mmsort [] = []
 mmsort [x] = [x]
-mmsort list = minimum list : mmsort (list \\ [(minimum list),(maximum list)]) ++ [maximum list]
+mmsort list = minimum list : mmsort (list \\ [minimum list, maximum list]) ++ [maximum list]
 
 --c
 ins :: (Ord a) => a -> [a] -> [a]

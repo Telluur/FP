@@ -6,8 +6,8 @@ f x = 2*x^2 + 3*x - 5
 --2
 code :: Int -> Char -> Char
 code n char
-	| x >= 65 && x <= 90 = chr((x - 65 + n) `mod` (26) + 65)
-	| x >= 97 && x <= 122 = chr((x - 97 + n) `mod` (26) + 97)
+	| x >= 65 && x <= 90 = chr((x - 65 + n) `mod` 26 + 65)
+	| x >= 97 && x <= 122 = chr((x - 97 + n) `mod` 26 + 97)
 	| otherwise = char
 	where
 	x = ord char
@@ -41,11 +41,11 @@ extrY a b c = c - b ^ 2 / (4 * a)
 --6
 mylength :: [a] -> Int
 mylength [] = 0
-mylength (x:xs) = mylength(xs) + 1
+mylength (x:xs) = mylength xs + 1
 
 mysum :: [Int] -> Int
 mysum [x] = x
-mysum (a:b:xs) = mysum([a+b] ++ xs)
+mysum (a:b:xs) = mysum((a+b) : xs)
 
 myreverse :: [a] -> [a]
 myreverse [] = []
@@ -65,14 +65,14 @@ myelem a (x:xs)
 
 myconcat :: [[a]] -> [a]
 myconcat ([]) = []
-myconcat (x:xs) = x ++ myconcat(xs)
+myconcat (x:xs) = x ++ myconcat xs
 
 mymaximum :: [Int] -> Int
 mymaximum [] = error "Empty list"
 mymaximum [x] = x
 mymaximum (x:y:xs)
-	| x > y = mymaximum([x] ++ xs)
-	| otherwise = mymaximum([y] ++ xs)
+	| x > y = mymaximum(x : xs)
+	| otherwise = mymaximum(y : xs)
 
 myzip :: [a] -> [b] -> [(a,b)]
 myzip _ [] = []
@@ -118,16 +118,15 @@ checkRows (m:mm:ms)
 	| otherwise = False
 
 sumRows :: [[Int]] -> [Int]
-sumRows [] = []
-sumRows (m:ms) = mysum m : sumRows ms
+sumRows = map mysum
 
 transpose :: [[a]] -> [[a]]
 transpose ([]:_) = []
-transpose x = (map head x) : transpose (map tail x)
+transpose x = map head x : transpose (map tail x)
 
 --Lazy and ineffective way
 sumCols :: [[Int]] -> [Int]
-sumCols m = sumRows (transpose m)
+sumCols = sumRows . transpose
 
 --Better
 sumCols2 :: [[Int]] -> [Int]
