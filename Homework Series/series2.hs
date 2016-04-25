@@ -26,6 +26,8 @@ myzipWith f (x:xs) (y:ys) = f x y : myzipWith f xs ys
 
 --2
 --a
+type Pers = (String, Int, String, String)
+db :: [Pers]
 db = [
 	("Rick", 19, "male", "Enschede"),
 	("Albert", 21, "male", "Amsterdam"),
@@ -156,8 +158,19 @@ If we make sure that b is always equal or greater than a, no duplicates can exis
 Optimization: C must always be larger than a and b. So we only generate from b to n.
 Possible optimization: Remove generator for c and check if a^2 + b^2 is a natural number.
 -}
-pyth :: Int -> [(Int,Int,Int)]
-pyth n = [ (a,b,c) | a <- [1..n] , b <- [a..n], c <- [b..n], a^2 + b^2 == c^2]
+pyth' :: Int -> [(Int,Int,Int)]
+pyth' n = [ (a,b,c) | a <- [1..n] , b <- [a..n], c <- [b..n], a^2 + b^2 == c^2]
+
+{-
+Removes the multiples, e.g: removes (6,8,10) when (3,4,5) is already in the list
+-}
+remPythMult' :: [(Int,Int,Int)] -> [(Int,Int,Int)]
+remPythMult' [] = []
+remPythMult' [x] = [x]
+remPythMult' ((a,b,c):xs) = (a,b,c) : remPythMult' (filter (\(d,e,f) -> ((d `div` a) /= (e `div` b) )) xs)
+
+pyth :: Int -> [(Int, Int, Int)]
+pyth = remPythMult' . pyth'
 
 --5
 --a
@@ -174,7 +187,6 @@ increasing (x:y:xs)
 list5b1 = [1,2,2,3,3,4,4,5,5]
 list5b2 = [1,2,3,4,3,7,8,9]
 
---Weird typecast in de eerste guard kan nooit de bedoeling zijn...
 weaklyDecreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
 weaklyDecreasing [x] = True
 weaklyDecreasing list@(x:xs)
