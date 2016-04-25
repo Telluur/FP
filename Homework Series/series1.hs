@@ -103,6 +103,9 @@ allDiffs [] = []
 allDiffs [x] = []
 allDiffs (x:y:xs) = (y-x) : allDiffs (y:xs)
 
+allDiffs2 :: (Num a) => [a] -> [a]
+allDiffs2 l@(x:xs) = zipWith (-) xs l
+
 isAS :: (Num a, Eq a) => [a] -> Bool
 isAS = allEqual . allDiffs
 
