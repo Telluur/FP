@@ -2,20 +2,12 @@ module FP_Core where
 
 import FPPrac.Trees
 
-{-
-Extension of CoreIntro.hs:
-- instructions as program *in* the processor,
-- stack now is list of fixed length,i
-- clock added
-- program counter + stack pointer added,
-- instruction EndProg added,
-- update operaton (<~) added,
--}
-
 -- ========================================================================
+-- Data definitions
 
 type Stack  = [Int]
 type Heap = [Int]
+type Variable = Int
 
 data Op     = Add | Mul | Sub
             deriving Show
@@ -24,19 +16,26 @@ data Instr  = PushConst Int
             | PushAddr Int
             | Store Int
             | Calc Op
+            | PushPC
+            | EndRep
             | EndProg
             deriving Show
 
 data Tick = Tick
 
-data Expr = Const Int                   -- for constants
-          | BinExpr Op Expr Expr        -- for ``binary expressions''
+data Expr   = Const Int                   -- for constants
+            | Addr Int
+            | BinExpr Op Expr Expr        -- for ``binary expressions''
+            deriving Show
 
-data Stmnt = Assign Int Expr
+data Stmnt  = Assign Int Expr
+            | Repeat Expr [Stmnt]
+            deriving Show
 
 
 -- ========================================================================
 -- Processor functions
+
 (<~) :: [a] -> (Int, a) -> [a]
 xs <~ (i,a) = take i xs ++ [a] ++ drop (i+1) xs
                 -- Put value a on position i in list xs
@@ -47,10 +46,9 @@ alu op = case op of
                 Mul -> (*)
                 Sub -> (-)
 
+core :: [Instr] -> (Int, Int, Heap, Stack) -> Tick -> (Int, Int, Heap, Stack)
 
-core :: [Instr] -> (Int,Int,Heap,Stack) -> Tick -> (Int,Int,Heap,Stack)
-
-core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
+core instrs (pc, sp, heap, stack) _ =  case instrs!!pc of
         PushConst n     -> (pc+1, sp+1, heap, stack <~ (sp,n))
         PushAddr a      -> (pc+1, sp+1, heap, stack <~ (sp,v))
             where
@@ -61,14 +59,69 @@ core instrs (pc,sp,heap,stack) tick =  case instrs!!pc of
         Calc op         -> (pc+1, sp-1, heap, stack <~ (sp-2,v))
             where
                 v = alu op (stack!!(sp-2)) (stack!!(sp-1))
+        PushPC          -> (pc+1, sp+1, heap, stack <~ (sp,pc))
+        EndRep          | i > 1     -> (pc', sp, heap, stack <~ (sp-2,i-1))
+                        | otherwise -> (pc+1, sp-2, heap, stack)
+            where
+                pc' = stack!!(sp-1) + 1
+                i   = stack!!(sp-2)
         EndProg         -> (-1, sp, heap, stack)
 
--- ========================================================================
--- example Program for expression: (((2*10) + (3*(4+11))) * (12+5))
 
--- Tree of this expression of type Expr (result of parsing):
-expr :: Expr
-expr = BinExpr Mul
+-- ========================================================================
+-- Code Compilation
+
+class Code a where
+    codeGen :: a -> [Instr]
+    toRoseTree :: a -> RoseTree
+
+instance Code Expr where
+    codeGen (Const e0) = [PushConst e0]
+    codeGen (Addr e0) = [PushAddr e0]
+    codeGen (BinExpr e0 e1 e2) = codeGen e1 ++ codeGen e2 ++ [Calc e0]
+
+    toRoseTree (Const x) = RoseNode (show x) []
+    toRoseTree (Addr x) = RoseNode ("Loc|" ++ show x) []
+    toRoseTree (BinExpr op l r) = RoseNode (show op) $ map toRoseTree [l, r]
+
+instance Code Stmnt where
+    codeGen (Assign e0 e1) = codeGen e1 ++ [Store e0]
+    codeGen (Repeat e0 e1) = codeGen e0 ++ [PushPC] ++ concatMap codeGen e1 ++ [EndRep]
+
+    toRoseTree (Assign e0 e1) = RoseNode "Assign" [RoseNode ("Loc|" ++ show e0) [], toRoseTree e1]
+    toRoseTree (Repeat e0 e1) = RoseNode "Repeat" $ toRoseTree e0 : map toRoseTree e1
+
+showStmnts :: [Stmnt] -> IO()
+showStmnts x = showRoseTree $ RoseNode "Program" $ map toRoseTree x
+
+compile :: Code a => [a] -> [Instr]
+compile x = concatMap codeGen x ++ [EndProg]
+
+
+-- ========================================================================
+-- Testing Framework
+clock :: [Tick]
+clock = repeat Tick
+
+emptyStack :: [Int]
+emptyStack = replicate 8 0
+
+emptyHeap :: [Int]
+emptyHeap = replicate 8 0
+
+exec :: Code a => [a] -> IO ()
+exec i = putStr
+       $ unlines
+       $ map show
+       $ takeWhile (\(pc,_,_,_) -> pc /= -1)
+       $ scanl (core $ compile i) (0,0,emptyHeap,emptyStack) clock
+
+
+-- ========================================================================
+-- Tests
+-- example Program for expression: (((2*10) + (3*(4+11))) * (12+5)) = 1105
+exprTest :: [Expr]
+exprTest = [BinExpr Mul
           (BinExpr Add
               (BinExpr Mul
                   (Const 2)
@@ -80,60 +133,33 @@ expr = BinExpr Mul
                       (Const 11))))
           (BinExpr Add
               (Const 12)
-              (Const 5))
+              (Const 5))]
 
--- The program that results in the value of the expression (1105):
-prog :: [Instr]
-prog = [ PushConst 2
-       , PushConst 10
-       , Calc Mul
-       , PushConst 3
-       , PushConst 4
-       , PushConst 11
-       , Calc Add
-       , Calc Mul
-       , Calc Add
-       , PushConst 12
-       , PushConst 5
-       , Calc Add
-       , Calc Mul
-       , EndProg
-       ]
+-- example program which stores ints x and y in memory, multiplies them, and stores them in heap 7
+assignTest :: Int -> Int -> [Stmnt]
+assignTest x y = [  Assign 0 (Const x),
+                    Assign 1 (Const y),
+                    Assign 7 (BinExpr Mul (Addr 0) (Addr 1))]
 
--- Testing
-clock :: [Tick]
-clock      = repeat Tick
+-- example program which demonstrates nested repeat statements, stores result of nested addition in heap 7 (=2*x*y)
+nestedTest :: Int -> Int -> [Stmnt]
+nestedTest x y = [  Assign 7 (Const 0),
+                    Repeat (Const x) [
+                        Repeat (Const y) [
+                            Assign 7 (BinExpr Add (Addr 7) (Const 1))]],
+                    Repeat (Const x) [
+                        Repeat (Const y) [
+                            Assign 7 (BinExpr Add (Addr 7) (Const 1))]]]
 
-emptyStack :: [Int]
-emptyStack = replicate 8 0
-
-emptyHeap :: [Int]
-emptyHeap = replicate 8 0
-
-transform :: Expr -> RoseTree
-transform (Const x) = RoseNode (show x) []
-transform (BinExpr op l r) = RoseNode (show op) $ map transform [l, r]
-
-class Code a where
-    codeGen :: a -> [Instr]
-
-instance Code Expr where
-    codeGen (Const e0) = [PushConst e0]
-    codeGen (BinExpr e0 e1 e2) = codeGen e1 ++ codeGen e2 ++ [Calc e0]
-
-code :: Expr -> [Instr]
-code x = codeGen x ++ [EndProg]
-
-test :: IO ()
-test       = putStr
-           $ unlines
-           $ map show
-           $ takeWhile (\(pc,_,_,_) -> pc /= -1)
-           $ scanl (core prog) (0,0,emptyHeap,emptyStack) clock
-
-exec :: Expr -> IO ()
-exec i =    putStr
-            $ unlines
-            $ map show
-            $ takeWhile (\(pc,_,_,_) -> pc /= -1)
-            $ scanl (core $ code i) (0,0,emptyHeap,emptyStack) clock
+-- example program which demonstrates the repeat statement implementing fibbionacci.
+fib :: Int -> [Stmnt]
+fib n   | n < 2 = error "Function argument should be >= 2"
+        | otherwise = [
+            Assign 0 (Const n),  -- Fibbionaci function that delivers the n'th (n >= 2) fib number in heap 7 (Starting from 0,1,1). fib 10 = 34
+            Assign 1 (Const 0),  -- Makes sure that the right values are on the heap from the start
+            Assign 2 (Const 1),
+            Assign 7 (Const 1),
+            Repeat (BinExpr Sub (Addr 0) (Const 2)) [
+                Assign 7 (BinExpr Add (Addr 1) (Addr 2)),
+                Assign 1 (Addr 2),
+                Assign 2 (Addr 7)]]
