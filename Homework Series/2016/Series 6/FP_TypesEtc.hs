@@ -87,7 +87,7 @@ toStrings tree = case tree of
                                                                     : [  (","++str'):strs' | (str':strs') <- strss ]
 
                                addEndBrack [strs]       = [ strs ++ ["]"] ]
-                               addEndBrack (strs:strss) = strs : addEndBrack strss 
+                               addEndBrack (strs:strss) = strs : addEndBrack strss
 
      PError tr rule nt str k -> [ "==========="
                                 , "Parse Error"
@@ -105,5 +105,3 @@ toStrings tree = case tree of
                                 ]
 
 prpr t  = putStr $ ('\n':) $ (++"\n") $ unlines $ toStrings t
-
-

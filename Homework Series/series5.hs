@@ -8,11 +8,11 @@ import Data.Char
 
 --Ugly tree structure, but this allows for easy pattern matching agains colour. More bulky, less boilerplate.
 data Tree = Tree Colour TreeNode
-	deriving (Show)
+    deriving (Show)
 data Colour = Red | Black | Grey
-	deriving (Show)
+    deriving (Show)
 data TreeNode = Node Tree Int Tree | Leaf
-	deriving (Show)
+    deriving (Show)
 
 pp :: Tree -> RBTree
 pp (Tree Red (Node l n r)) = RBNode NodeRed (show n) [pp l , pp r]
@@ -24,12 +24,12 @@ pp (Tree Grey (Leaf)) = RBNode NodeGrey [] []
 
 insert :: Tree -> Int -> Tree
 insert (Tree c (Node l n r)) i
-	| i < n = Tree c (Node (insert l i) n r)
-	| i > n = Tree c (Node l n (insert r i))
-	| otherwise = error $ "Found duplicate value when trying to insert: " ++ (show i)
+    | i < n = Tree c (Node (insert l i) n r)
+    | i > n = Tree c (Node l n (insert r i))
+    | otherwise = error $ "Found duplicate value when trying to insert: " ++ (show i)
 insert (Tree _ (Leaf)) i = Tree Red (Node (leaf) i (leaf))
-	where
-	leaf = Tree Black (Leaf)
+    where
+    leaf = Tree Black (Leaf)
 
 rootToBlack :: Tree -> Tree
 rootToBlack (Tree Red node) = Tree Black node
@@ -38,8 +38,8 @@ rootToBlack tree@(Tree Black node) = tree
 
 colourFlip :: Tree -> Tree
 colourFlip tree@(Tree Black (Node (Tree Red (Node (ll) il (lr))) i (Tree Red (Node (rl) ir (rr)))))
-	| any (isRed) [ll, lr, rl, rr] = Tree Red (Node (Tree Black (Node (ll) il (lr))) i (Tree Black (Node (rl) ir (rr))))
-	| otherwise = tree
+    | any (isRed) [ll, lr, rl, rr] = Tree Red (Node (Tree Black (Node (ll) il (lr))) i (Tree Black (Node (rl) ir (rr))))
+    | otherwise = tree
 colourFlip tree = tree
 
 rebalance :: Tree -> Tree
@@ -98,19 +98,19 @@ delete tree i = rootToBlack $ delete' tree i
 
 delete' :: Tree -> Int -> Tree
 delete' (Tree Red (Node (Tree Black Leaf) x (Tree Black Leaf))) i
-	| i == x = Tree Black (Leaf)
-	| otherwise = error $ "Value " ++ (show i) ++ " not found."
+    | i == x = Tree Black (Leaf)
+    | otherwise = error $ "Value " ++ (show i) ++ " not found."
 delete' (Tree Black (Node (Tree Black Leaf) x (Tree Black Leaf))) i
-	| i == x = Tree Grey Leaf
-	| otherwise = error $ "Value " ++ (show i) ++ " not found."
+    | i == x = Tree Grey Leaf
+    | otherwise = error $ "Value " ++ (show i) ++ " not found."
 delete' (Tree Black (Node (Tree Red l) x (Tree Black (Leaf)))) i
-	| i < x = Tree Black (Node (delete' (Tree Red l) i) x (Tree Black (Leaf)))
-	| i == x = Tree Black l
-	| otherwise = error $ "Value " ++ (show i) ++ " not found."
+    | i < x = Tree Black (Node (delete' (Tree Red l) i) x (Tree Black (Leaf)))
+    | i == x = Tree Black l
+    | otherwise = error $ "Value " ++ (show i) ++ " not found."
 delete' (Tree cx (Node l x r)) i
-	| i < x = greyRebalance $ Tree cx (Node (delete' l i) x r)
-	| i > x = greyRebalance $ Tree cx (Node l x (delete' r i))
-	| i == x = greyRebalance $ Tree cx (Node l (leftmostValue r) (removeLeftmostNode r))
+    | i < x = greyRebalance $ Tree cx (Node (delete' l i) x r)
+    | i > x = greyRebalance $ Tree cx (Node l x (delete' r i))
+    | i == x = greyRebalance $ Tree cx (Node l (leftmostValue r) (removeLeftmostNode r))
 
 --Helper functions
 isRed :: Tree -> Bool

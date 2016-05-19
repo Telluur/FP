@@ -73,26 +73,26 @@ core instrs (pc, sp, heap, stack) _ =  case instrs!!pc of
 
 class Code a where
     codeGen :: a -> [Instr]
-    toRoseTree :: a -> RoseTree
+    myToRoseTree :: a -> RoseTree
 
 instance Code Expr where
     codeGen (Const e0) = [PushConst e0]
     codeGen (Addr e0) = [PushAddr e0]
     codeGen (BinExpr e0 e1 e2) = codeGen e1 ++ codeGen e2 ++ [Calc e0]
 
-    toRoseTree (Const x) = RoseNode (show x) []
-    toRoseTree (Addr x) = RoseNode ("Loc|" ++ show x) []
-    toRoseTree (BinExpr op l r) = RoseNode (show op) $ map toRoseTree [l, r]
+    myToRoseTree (Const x) = RoseNode (show x) []
+    myToRoseTree (Addr x) = RoseNode ("Loc|" ++ show x) []
+    myToRoseTree (BinExpr op l r) = RoseNode (show op) $ map myToRoseTree [l, r]
 
 instance Code Stmnt where
     codeGen (Assign e0 e1) = codeGen e1 ++ [Store e0]
     codeGen (Repeat e0 e1) = codeGen e0 ++ [PushPC] ++ concatMap codeGen e1 ++ [EndRep]
 
-    toRoseTree (Assign e0 e1) = RoseNode "Assign" [RoseNode ("Loc|" ++ show e0) [], toRoseTree e1]
-    toRoseTree (Repeat e0 e1) = RoseNode "Repeat" $ toRoseTree e0 : map toRoseTree e1
+    myToRoseTree (Assign e0 e1) = RoseNode "Assign" [RoseNode ("Loc|" ++ show e0) [], myToRoseTree e1]
+    myToRoseTree (Repeat e0 e1) = RoseNode "Repeat" $ myToRoseTree e0 : map myToRoseTree e1
 
 showStmnts :: [Stmnt] -> IO()
-showStmnts x = showRoseTree $ RoseNode "Program" $ map toRoseTree x
+showStmnts x = showRoseTree $ RoseNode "Program" $ map myToRoseTree x
 
 compile :: Code a => [a] -> [Instr]
 compile x = concatMap codeGen x ++ [EndProg]

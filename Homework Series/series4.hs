@@ -8,17 +8,17 @@ import Data.List
 --1
 --a
 data BinTree a b = Leaf b
-	| Node (BinTree a b) a (BinTree a b)
-	deriving (Show)
+    | Node (BinTree a b) a (BinTree a b)
+    deriving (Show)
 
 data Unit = Unit
 instance Show Unit where
-	show Unit = ""
+    show Unit = ""
 
 type Tree1a = BinTree Int Int
 type Tree1b = BinTree (Int, Int) (Int, Int)
 type Tree1c = BinTree Int Unit
-	
+
 --b
 t1a :: Tree1a
 t1a = Node (Node (Node (Leaf 4) 3 (Leaf 4)) 2 (Node (Leaf 4) 3 (Leaf 4))) 1 (Node (Node (Leaf 4) 3 (Leaf 4)) 2 (Node (Leaf 4) 3 (Leaf 4)))
@@ -43,27 +43,27 @@ showBinTreeList l = showRoseTreeList $ map pp l
 
 --2
 --Tokenize
-data Token = LB 
-	| RB 
-	| OP String
-	| NUM Float
-	| VAR String
-	deriving (Show)
-	
+data Token = LB
+    | RB
+    | OP String
+    | NUM Float
+    | VAR String
+    deriving (Show)
+
 tokenize :: String -> [Token]
 tokenize [] = []
-tokenize string@(x:xs) 
-	| x == '(' = LB : tokenize xs
-	| x == ')' = RB : tokenize xs
-	| x `elem` "+-*/^=<>" = (OP [x]) : tokenize xs
-	| x == ' ' = tokenize xs --ignore whitespace
-	| isDigit x = (NUM (read number :: Float)) : tokenize r0 --number must begin with a digit, else read won't parse to a float
-	| x == '~' = (NUM $ 0 - (read negNumber :: Float)) : tokenize r1 --ugly way to make negative, but it works :D
-	| isAlpha x = (VAR word) : tokenize r2
-	where 
-	(number, r0) = getNumberPart string
-	(negNumber, r1) = getNegNumberPart xs
-	(word, r2) = getWord string
+tokenize string@(x:xs)
+    | x == '(' = LB : tokenize xs
+    | x == ')' = RB : tokenize xs
+    | x `elem` "+-*/^=<>" = (OP [x]) : tokenize xs
+    | x == ' ' = tokenize xs --ignore whitespace
+    | isDigit x = (NUM (read number :: Float)) : tokenize r0 --number must begin with a digit, else read won't parse to a float
+    | x == '~' = (NUM $ 0 - (read negNumber :: Float)) : tokenize r1 --ugly way to make negative, but it works :D
+    | isAlpha x = (VAR word) : tokenize r2
+    where
+    (number, r0) = getNumberPart string
+    (negNumber, r1) = getNegNumberPart xs
+    (word, r2) = getWord string
 
 --helper functions
 getNumberPart :: String -> (String, String)
@@ -73,27 +73,27 @@ isNumberPart :: Char -> Bool
 isNumberPart x = x `elem` "0123456789."
 
 getNegNumberPart :: String -> (String, String)
-getNegNumberPart string@(x:xs) 
-	| isDigit x = (takeWhile isNumberPart string, dropWhile isNumberPart string) --makes sure that leading number is a digit as ".0123" will not parse in a float.
-	| otherwise = error "Negative number unparsable: Must start with a leading zero."
+getNegNumberPart string@(x:xs)
+    | isDigit x = (takeWhile isNumberPart string, dropWhile isNumberPart string) --makes sure that leading number is a digit as ".0123" will not parse in a float.
+    | otherwise = error "Negative number unparsable: Must start with a leading zero."
 
 getWord :: String -> (String, String)
 getWord string = (takeWhile isWordPart string, dropWhile isWordPart string)
 
 isWordPart :: Char -> Bool
 isWordPart x = isAlpha x || isDigit x
-	
+
 --Parse
 parse :: String -> BinTree Token (Either Token Float)
 parse string = fst $ parse' $ tokenize string
 
 parse' :: [Token] -> (BinTree Token (Either Token Float), [Token])
-parse' ((LB):xs) = (Node ll o rl, r3) 
-	where 
-	(ll, r0) = parse' xs
-	((Node _ o _), r1) = parse' r0
-	(rl, r2) = parse' r1
-	r3 = parse'matchRB r2 --Makes sure a closing bracket follows.
+parse' ((LB):xs) = (Node ll o rl, r3)
+    where
+    (ll, r0) = parse' xs
+    ((Node _ o _), r1) = parse' r0
+    (rl, r2) = parse' r1
+    r3 = parse'matchRB r2 --Makes sure a closing bracket follows.
 parse' ((NUM x):xs) = (Leaf $ Right x, xs)
 parse' ((VAR x):xs) = (Leaf $ Left (VAR x), xs)
 parse' ((OP x):xs) = (Node (Leaf $ Left LB) (OP x) (Leaf $ Left LB), xs)
@@ -107,7 +107,7 @@ parse'matchRB _ = error "Invalid expression: No matching closing bracket found."
 --display
 parseAndShowExpr :: String -> IO ()
 parseAndShowExpr e = showBinTree $ parse e
-ps e = parseAndShowExpr e 
+ps e = parseAndShowExpr e
 
 parseAndShowExprList :: [String] -> IO ()
 parseAndShowExprList el = showBinTreeList $ map (parse) el
@@ -117,31 +117,31 @@ e0 = "((2*(x^2)) + ((1/2)*x))"
 
 eval :: (String -> Float) -> BinTree Token (Either Token Float) -> Either Bool Float
 eval f tree@(Node ll (OP x) rl)
-	| x `elem` ["=","<",">"] = eval' BOOL f tree
-	| x `elem` ["+","-","*","/","^"] = eval' CALC f tree
-	| otherwise = error "Nope."
+    | x `elem` ["=","<",">"] = eval' BOOL f tree
+    | x `elem` ["+","-","*","/","^"] = eval' CALC f tree
+    | otherwise = error "Nope."
 
 
 data E = BOOL | CALC
 eval' :: E -> (String -> Float) -> BinTree Token (Either Token Float) -> Either Bool Float
 eval' BOOL f (Node ll (OP x) rl)
-	| x == "=" = Left $ l == r 
-	| x == "<" = Left $ l < r
-	| x == ">" = Left $ l > r
-	| otherwise = error "I dun goofed."
-	where
-	Right l = eval' CALC f ll
-	Right r = eval' CALC f rl
+    | x == "=" = Left $ l == r
+    | x == "<" = Left $ l < r
+    | x == ">" = Left $ l > r
+    | otherwise = error "I dun goofed."
+    where
+    Right l = eval' CALC f ll
+    Right r = eval' CALC f rl
 eval' CALC f (Node ll (OP x) rl)
-	| x == "+" = Right $ l + r
-	| x == "-" = Right $ l - r
-	| x == "*" = Right $ l * r
-	| x == "/" = Right $ l / r
-	| x == "^" = Right $ l ** r
-	where
-	Right l = eval' CALC f ll
-	Right r = eval' CALC f rl
-eval' CALC f (Leaf (Left (VAR x))) = Right $ f x 
+    | x == "+" = Right $ l + r
+    | x == "-" = Right $ l - r
+    | x == "*" = Right $ l * r
+    | x == "/" = Right $ l / r
+    | x == "^" = Right $ l ** r
+    where
+    Right l = eval' CALC f ll
+    Right r = eval' CALC f rl
+eval' CALC f (Leaf (Left (VAR x))) = Right $ f x
 eval' CALC _ (Leaf (Right x)) = Right x
 
 assign :: String -> Float

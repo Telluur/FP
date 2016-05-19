@@ -6,27 +6,27 @@ f x = 2*x^2 + 3*x - 5
 --2
 code :: Int -> Char -> Char
 code n char
-	| x >= 65 && x <= 90 = chr((x - 65 + n) `mod` 26 + 65)
-	| x >= 97 && x <= 122 = chr((x - 97 + n) `mod` 26 + 97)
-	| otherwise = char
-	where
-	x = ord char
+    | x >= 65 && x <= 90 = chr((x - 65 + n) `mod` 26 + 65)
+    | x >= 97 && x <= 122 = chr((x - 97 + n) `mod` 26 + 97)
+    | otherwise = char
+    where
+    x = ord char
 --3
 interest :: Int -> Float -> Float -> Float
 interest n a r
-	| n == 0 = a
-	| otherwise = interest (n-1) (a + a / 100 * r) r
+    | n == 0 = a
+    | otherwise = interest (n-1) (a + a / 100 * r) r
 
 --4
 root1 :: Float -> Float -> Float -> Float
 root1 a b c
-	| discr a b c >= 0 = ((-b) + sqrt(b ^ 2 - 4 * a * c)) / (2 * a)
-	| otherwise = error "negative discriminant"
+    | discr a b c >= 0 = ((-b) + sqrt(b ^ 2 - 4 * a * c)) / (2 * a)
+    | otherwise = error "negative discriminant"
 
 root2 :: Float -> Float -> Float -> Float
 root2 a b c
-	| discr a b c >= 0 = ((-b) - sqrt(b ^ 2 - 4 * a * c)) / (2 * a)
-	| otherwise = error "negative discriminant"
+    | discr a b c >= 0 = ((-b) - sqrt(b ^ 2 - 4 * a * c)) / (2 * a)
+    | otherwise = error "negative discriminant"
 
 discr :: Float -> Float -> Float -> Float
 discr a b c = b ^ 2 - 4 * a * c
@@ -60,8 +60,8 @@ mytake n (x:xs) = x : mytake (n-1) xs
 myelem :: (Eq a) => a -> [a] -> Bool
 myelem a [] = False
 myelem a (x:xs)
-	| a == x = True
-	| otherwise = myelem a xs
+    | a == x = True
+    | otherwise = myelem a xs
 
 myconcat :: [[a]] -> [a]
 myconcat ([]) = []
@@ -71,8 +71,8 @@ mymaximum :: [Int] -> Int
 mymaximum [] = error "Empty list"
 mymaximum [x] = x
 mymaximum (x:y:xs)
-	| x > y = mymaximum(x : xs)
-	| otherwise = mymaximum(y : xs)
+    | x > y = mymaximum(x : xs)
+    | otherwise = mymaximum(y : xs)
 
 myzip :: [a] -> [b] -> [(a,b)]
 myzip _ [] = []
@@ -114,8 +114,8 @@ checkRows :: (Eq a) => [[a]] -> Bool
 checkRows [] = error "Empty matrix"
 checkRows [a] = True
 checkRows (m:mm:ms)
-	| mylength m == mylength mm = checkRows(mm:ms)
-	| otherwise = False
+    | mylength m == mylength mm = checkRows(mm:ms)
+    | otherwise = False
 
 sumRows :: [[Int]] -> [Int]
 sumRows = map mysum

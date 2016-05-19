@@ -29,17 +29,17 @@ myzipWith f (x:xs) (y:ys) = f x y : myzipWith f xs ys
 type Pers = (String, Int, String, String)
 db :: [Pers]
 db = [
-	("Rick", 19, "male", "Enschede"),
-	("Albert", 21, "male", "Amsterdam"),
-	("Bert", 25, "male", "Rotterdam"),
-	("Celine", 99, "female", "Zevenaar"),
-	("Judith", 38, "female", "London"),
-	("Erika", 40 , "female", "Hengelo"),
-	("Frans", 32, "male", "Arnhem"),
-	("Stan", 10, "male", "Nijmegen"),
-	("Veronica", 35, "female", "Wehl"),
-	("Michiel", 20, "male", "Badhoevedorp")
-	]
+    ("Rick", 19, "male", "Enschede"),
+    ("Albert", 21, "male", "Amsterdam"),
+    ("Bert", 25, "male", "Rotterdam"),
+    ("Celine", 99, "female", "Zevenaar"),
+    ("Judith", 38, "female", "London"),
+    ("Erika", 40 , "female", "Hengelo"),
+    ("Frans", 32, "male", "Arnhem"),
+    ("Stan", 10, "male", "Nijmegen"),
+    ("Veronica", 35, "female", "Wehl"),
+    ("Michiel", 20, "male", "Badhoevedorp")
+    ]
 
 --b
 name :: (Num a, Ord a) => (String,a,String,String) -> String
@@ -76,8 +76,8 @@ womenBetween30And40 (_,b,c,_) = (b > 30) && (b < 40) && (c == "female")
 womenR :: (Num a, Ord a) => [(String,a,String,String)] -> [(String,a,String,String)]
 womenR [] = []
 womenR ((a,b,c,d):xs)
-	| womenBetween30And40 (a,b,c,d) = (a,b,c,d) : womenR xs
-	| otherwise = womenR xs
+    | womenBetween30And40 (a,b,c,d) = (a,b,c,d) : womenR xs
+    | otherwise = womenR xs
 
 --list comprehension
 womenC :: (Num a, Ord a) => [(String,a,String,String)] -> [(String,a,String,String)]
@@ -90,25 +90,25 @@ womenHO = filter womenBetween30And40
 --e
 ageByName :: (Num a, Ord a) => String -> [(String,a,String,String)] -> a
 ageByName name ((a,b,c,d):xs)
-	| map toLower name == map toLower a = b
-	| otherwise = ageByName name xs
+    | map toLower name == map toLower a = b
+    | otherwise = ageByName name xs
 
 --f
 persondb = [
-	Person "Rick" 30 "male" "Enschede",
-	Person "Albert" 21 "male" "Amsterdam",
-	Person "Bert" 25 "male" "Rotterdam"
-	]
+    Person "Rick" 30 "male" "Enschede",
+    Person "Albert" 21 "male" "Amsterdam",
+    Person "Bert" 25 "male" "Rotterdam"
+    ]
 
 data Person = Person {
-	nameT :: String,
-	ageT :: Int,
-	sexT :: String,
-	placeT :: String
-	}deriving(Eq, Show)
+    nameT :: String,
+    ageT :: Int,
+    sexT :: String,
+    placeT :: String
+    }deriving(Eq, Show)
 
 instance Ord Person where
-	compare x y = compare (ageT x) (ageT y)
+    compare x y = compare (ageT x) (ageT y)
 
 
 sortByAge :: (Ord Person) => [Person] -> [Person]
@@ -180,8 +180,8 @@ list5a2 = [1,3,5,3,2,3]
 increasing :: (Num a, Ord a) => [a] -> Bool
 increasing [x] = True
 increasing (x:y:xs)
-	| x < y = increasing (y:xs)
-	| otherwise = False
+    | x < y = increasing (y:xs)
+    | otherwise = False
 
 --b
 list5b1 = [1,2,2,3,3,4,4,5,5]
@@ -190,19 +190,19 @@ list5b2 = [1,2,3,4,3,7,8,9]
 weaklyDecreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
 weaklyDecreasing [x] = True
 weaklyDecreasing list@(x:xs)
-	| fromIntegral x > (fromIntegral (sum xs) / fromIntegral (length xs)) = weaklyDecreasing xs
-	| otherwise = False
+    | fromIntegral x > (fromIntegral (sum xs) / fromIntegral (length xs)) = weaklyDecreasing xs
+    | otherwise = False
 
 weaklyIncreasing :: (Ord a, Num a, Integral a) => [a] -> Bool
 weaklyIncreasing list = weaklyDecreasing $ reverse list
 
 --6
 --a
-list61 = [1,9,2,8,3,7,4,6,5]	--List
-list62 = [1,9,2]				--Sublist
-list63 = [7,4,6]				--Sublist
-list64 = [1,4,5]				--Partial
-list65 = [5,4,3]				--Neither
+list61 = [1,9,2,8,3,7,4,6,5]    --List
+list62 = [1,9,2]                --Sublist
+list63 = [7,4,6]                --Sublist
+list64 = [1,4,5]                --Partial
+list65 = [5,4,3]                --Neither
 
 isSublist :: (Eq a, Num a) => [a] -> [a] -> Bool
 isSublist [] _ = False
@@ -214,16 +214,16 @@ prec [] [] = True
 prec _ [] = False
 prec [] (x:xs)  = True
 prec sub@(x:xs) list@(y:ys)
-	| x == y = prec xs ys
-	| otherwise = False
+    | x == y = prec xs ys
+    | otherwise = False
 
 --b
 isPartialSublist :: (Eq a, Num a) => [a] -> [a] -> Bool
 isPartialSublist [] _ = True
 isPartialSublist _ [] = False
 isPartialSublist sub@(x:xs) list@(y:ys)
-	| x == y = isPartialSublist xs ys
-	| otherwise = isPartialSublist sub ys
+    | x == y = isPartialSublist xs ys
+    | otherwise = isPartialSublist sub ys
 
 --7
 --a
@@ -262,17 +262,17 @@ merge :: (Ord a) => [a] -> [a] -> [a]
 merge xs [] = xs
 merge [] ys = ys
 merge (x:xs) (y:ys)
-	| x < y = x : merge xs (y:ys)
-	| otherwise = y : merge (x:xs) ys
+    | x < y = x : merge xs (y:ys)
+    | otherwise = y : merge (x:xs) ys
 
 msort :: (Ord a) => [a] -> [a]
 msort list
-	| length list > 1 = merge (msort half1) (msort half2)
-	| otherwise = list
-	where
-	n = length list `div` 2
-	half1 = take n list
-	half2 = drop n list
+    | length list > 1 = merge (msort half1) (msort half2)
+    | otherwise = list
+    where
+    n = length list `div` 2
+    half1 = take n list
+    half2 = drop n list
 
 --e
 qsort :: (Ord a) => [a] -> [a]
